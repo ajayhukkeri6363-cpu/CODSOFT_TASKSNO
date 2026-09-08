@@ -12,6 +12,7 @@
     "prisma:migrate": "prisma db push",
     "prisma:seed": "node prisma/seed.js",
     "db:setup": "prisma db push && node prisma/seed.js",
+    "postinstall": "prisma generate",
     "test": "node test-suite.js"
   },
   "dependencies": {

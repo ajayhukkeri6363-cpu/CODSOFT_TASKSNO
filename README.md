@@ -141,6 +141,35 @@ npm test
 
 ---
 
+## 🌐 Deploying to Vercel & Production PostgreSQL
+
+EduManage is fully optimized for **Vercel** and managed cloud PostgreSQL providers (such as [Neon](https://neon.tech), [Supabase](https://supabase.com), or [Vercel Postgres](https://vercel.com/docs/storage/vercel-postgres)).
+
+### 1. Provision a Cloud PostgreSQL Database
+1. Create a free account at [Neon](https://neon.tech) or [Supabase](https://supabase.com).
+2. Create a new PostgreSQL database and copy the **Connection String** with SSL mode enabled (e.g. `postgresql://user:password@ep-xyz.aws.neon.tech/neondb?sslmode=require`).
+
+### 2. Push Database Schema & Seed Data Remotely
+From your local terminal, set your connection string and initialize the database:
+```bash
+# Push schema and create all PostgreSQL tables
+DATABASE_URL="<YOUR_POSTGRESQL_CONNECTION_STRING>" npx prisma db push
+
+# Seed initial admin, teacher, student, attendance, exam, and fee data
+DATABASE_URL="<YOUR_POSTGRESQL_CONNECTION_STRING>" node prisma/seed.js
+```
+
+### 3. Deploy to Vercel
+1. Push your latest code to your GitHub repository.
+2. In the [Vercel Dashboard](https://vercel.com), click **"Add New"** > **"Project"** and import your GitHub repository.
+3. In the **Environment Variables** section, configure the following:
+   * **`DATABASE_URL`**: `<Your PostgreSQL Connection String>`
+   * **`JWT_SECRET`**: `<A random 32+ character secret string>`
+4. Click **Deploy**. Vercel will automatically run `npm run build` and launch your production platform!
+
+
+---
+
 ## 📂 Project Structure
 
 ```
