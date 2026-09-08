@@ -1,12 +1,135 @@
 import prisma from '@/lib/prisma';
 import bcrypt from 'bcryptjs';
 
+export async function ensureTablesExist() {
+  const ddlStatements = [
+    `CREATE TABLE IF NOT EXISTS "User" (
+      "id" TEXT PRIMARY KEY,
+      "email" TEXT UNIQUE NOT NULL,
+      "passwordHash" TEXT NOT NULL,
+      "role" TEXT NOT NULL DEFAULT 'CUSTOMER',
+      "name" TEXT NOT NULL,
+      "phone" TEXT,
+      "avatar" TEXT,
+      "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+      "updatedAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP
+    );`,
+    `CREATE TABLE IF NOT EXISTS "MenuCategory" (
+      "id" TEXT PRIMARY KEY,
+      "name" TEXT UNIQUE NOT NULL,
+      "slug" TEXT UNIQUE NOT NULL,
+      "description" TEXT,
+      "icon" TEXT,
+      "displayOrder" INTEGER NOT NULL DEFAULT 0,
+      "isActive" BOOLEAN NOT NULL DEFAULT true,
+      "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+      "updatedAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP
+    );`,
+    `CREATE TABLE IF NOT EXISTS "MenuItem" (
+      "id" TEXT PRIMARY KEY,
+      "categoryId" TEXT NOT NULL REFERENCES "MenuCategory"("id") ON DELETE CASCADE ON UPDATE CASCADE,
+      "name" TEXT NOT NULL,
+      "slug" TEXT UNIQUE NOT NULL,
+      "description" TEXT NOT NULL,
+      "price" DOUBLE PRECISION NOT NULL,
+      "image" TEXT NOT NULL,
+      "isVeg" BOOLEAN NOT NULL DEFAULT false,
+      "isGlutenFree" BOOLEAN NOT NULL DEFAULT false,
+      "isSpicy" BOOLEAN NOT NULL DEFAULT false,
+      "isPopular" BOOLEAN NOT NULL DEFAULT false,
+      "isAvailable" BOOLEAN NOT NULL DEFAULT true,
+      "prepTimeMinutes" INTEGER NOT NULL DEFAULT 15,
+      "calories" INTEGER,
+      "ingredients" TEXT,
+      "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+      "updatedAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP
+    );`,
+    `CREATE TABLE IF NOT EXISTS "RestaurantTable" (
+      "id" TEXT PRIMARY KEY,
+      "tableNumber" TEXT UNIQUE NOT NULL,
+      "capacity" INTEGER NOT NULL DEFAULT 4,
+      "location" TEXT NOT NULL DEFAULT 'MAIN_HALL',
+      "status" TEXT NOT NULL DEFAULT 'AVAILABLE',
+      "qrCode" TEXT,
+      "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+      "updatedAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP
+    );`,
+    `CREATE TABLE IF NOT EXISTS "Reservation" (
+      "id" TEXT PRIMARY KEY,
+      "userId" TEXT REFERENCES "User"("id") ON DELETE SET NULL ON UPDATE CASCADE,
+      "tableId" TEXT REFERENCES "RestaurantTable"("id") ON DELETE SET NULL ON UPDATE CASCADE,
+      "customerName" TEXT NOT NULL,
+      "customerEmail" TEXT NOT NULL,
+      "customerPhone" TEXT NOT NULL,
+      "reservationDate" TIMESTAMP(3) NOT NULL,
+      "timeSlot" TEXT NOT NULL,
+      "guestCount" INTEGER NOT NULL DEFAULT 2,
+      "specialRequests" TEXT,
+      "status" TEXT NOT NULL DEFAULT 'CONFIRMED',
+      "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+      "updatedAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP
+    );`,
+    `CREATE TABLE IF NOT EXISTS "Order" (
+      "id" TEXT PRIMARY KEY,
+      "orderNumber" TEXT UNIQUE NOT NULL,
+      "userId" TEXT REFERENCES "User"("id") ON DELETE SET NULL ON UPDATE CASCADE,
+      "tableId" TEXT REFERENCES "RestaurantTable"("id") ON DELETE SET NULL ON UPDATE CASCADE,
+      "customerName" TEXT NOT NULL,
+      "customerEmail" TEXT,
+      "customerPhone" TEXT NOT NULL,
+      "orderType" TEXT NOT NULL DEFAULT 'DINE_IN',
+      "status" TEXT NOT NULL DEFAULT 'PLACED',
+      "subtotal" DOUBLE PRECISION NOT NULL,
+      "tax" DOUBLE PRECISION NOT NULL,
+      "deliveryFee" DOUBLE PRECISION NOT NULL DEFAULT 0,
+      "discount" DOUBLE PRECISION NOT NULL DEFAULT 0,
+      "total" DOUBLE PRECISION NOT NULL,
+      "notes" TEXT,
+      "deliveryAddress" TEXT,
+      "estimatedPrepMin" INTEGER NOT NULL DEFAULT 20,
+      "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+      "updatedAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP
+    );`,
+    `CREATE TABLE IF NOT EXISTS "OrderItem" (
+      "id" TEXT PRIMARY KEY,
+      "orderId" TEXT NOT NULL REFERENCES "Order"("id") ON DELETE CASCADE ON UPDATE CASCADE,
+      "menuItemId" TEXT NOT NULL REFERENCES "MenuItem"("id") ON DELETE CASCADE ON UPDATE CASCADE,
+      "quantity" INTEGER NOT NULL,
+      "unitPrice" DOUBLE PRECISION NOT NULL,
+      "totalPrice" DOUBLE PRECISION NOT NULL,
+      "specialInstructions" TEXT,
+      "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP
+    );`,
+    `CREATE TABLE IF NOT EXISTS "Payment" (
+      "id" TEXT PRIMARY KEY,
+      "orderId" TEXT UNIQUE NOT NULL REFERENCES "Order"("id") ON DELETE CASCADE ON UPDATE CASCADE,
+      "transactionId" TEXT UNIQUE NOT NULL,
+      "amount" DOUBLE PRECISION NOT NULL,
+      "paymentMethod" TEXT NOT NULL,
+      "status" TEXT NOT NULL DEFAULT 'PAID',
+      "paidAt" TIMESTAMP(3) DEFAULT CURRENT_TIMESTAMP,
+      "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+      "updatedAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP
+    );`
+  ];
+
+  for (const ddl of ddlStatements) {
+    try {
+      await prisma.$executeRawUnsafe(ddl);
+    } catch (e: any) {
+      // Ignore if table already exists or DDL is handled differently in local vs postgres
+    }
+  }
+}
+
 export async function seedDatabase(force = false) {
   try {
-    const existingUsers = await prisma.user.count();
-    const existingCategories = await prisma.menuCategory.count();
-    const existingItems = await prisma.menuItem.count();
-    const existingTables = await prisma.restaurantTable.count();
+    await ensureTablesExist();
+
+    const existingUsers = await prisma.user.count().catch(() => 0);
+    const existingCategories = await prisma.menuCategory.count().catch(() => 0);
+    const existingItems = await prisma.menuItem.count().catch(() => 0);
+    const existingTables = await prisma.restaurantTable.count().catch(() => 0);
 
     if (!force && existingUsers >= 3 && existingCategories >= 6 && existingItems >= 15 && existingTables >= 10) {
       return {
@@ -522,19 +645,12 @@ let seedPromise: Promise<any> | null = null;
 
 export async function seedDatabaseIfEmpty() {
   try {
-    const categoriesCount = await prisma.menuCategory.count();
-    const itemsCount = await prisma.menuItem.count();
-    const usersCount = await prisma.user.count();
-    const tablesCount = await prisma.restaurantTable.count();
-
-    if (categoriesCount < 6 || itemsCount < 15 || usersCount < 3 || tablesCount < 10) {
-      if (!seedPromise) {
-        seedPromise = seedDatabase(false).finally(() => {
-          seedPromise = null;
-        });
-      }
-      return await seedPromise;
+    if (!seedPromise) {
+      seedPromise = seedDatabase(false).finally(() => {
+        seedPromise = null;
+      });
     }
+    return await seedPromise;
   } catch (error) {
     console.error('Error during auto-seed check:', error);
   }
