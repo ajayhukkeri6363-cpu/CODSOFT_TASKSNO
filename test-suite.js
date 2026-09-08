@@ -1,437 +1,381 @@
-const { spawn } = require('child_process');
 const http = require('http');
+const { spawn } = require('child_process');
 
-const PORT = 3000;
+const PORT = 3001;
 const BASE_URL = `http://localhost:${PORT}`;
 
-function isServerRunning() {
-  return new Promise((resolve) => {
-    const req = http.get(BASE_URL, (res) => {
-      resolve(true);
-    });
-    req.on('error', () => {
-      resolve(false);
-    });
-    req.setTimeout(1000, () => {
-      req.destroy();
-      resolve(false);
-    });
-  });
+let serverProcess;
+let testCount = 0;
+let passedCount = 0;
+let failedCount = 0;
+
+function assert(condition, message) {
+  testCount++;
+  if (condition) {
+    console.log(`  ✅ PASS: ${message}`);
+    passedCount++;
+  } else {
+    console.error(`  ❌ FAIL: ${message}`);
+    failedCount++;
+  }
 }
 
-function delay(ms) {
-  return new Promise((resolve) => setTimeout(resolve, ms));
-}
+function makeRequest(path, options = {}) {
+  return new Promise((resolve, reject) => {
+    const url = new URL(path, BASE_URL);
+    const reqOptions = {
+      method: options.method || 'GET',
+      headers: options.headers || {},
+    };
 
-async function startServerIfNeeded() {
-  const running = await isServerRunning();
-  if (running) {
-    console.log('⚡ Detected running Next.js instance on port 3000.\n');
-    return null;
-  }
-
-  console.log('🚀 Starting Next.js instance for automated test execution...');
-  const isWindows = process.platform === 'win32';
-  const npmCmd = isWindows ? 'npm.cmd' : 'npm';
-  const serverProcess = spawn(npmCmd, ['run', 'start'], {
-    stdio: 'pipe',
-    shell: true,
-  });
-
-  // Wait for server to become ready
-  let attempts = 0;
-  while (attempts < 30) {
-    await delay(1000);
-    const ready = await isServerRunning();
-    if (ready) {
-      console.log('✅ Server ready on port 3000.\n');
-      return serverProcess;
-    }
-    attempts++;
-  }
-
-  console.warn('⚠️ Server took too long to start, proceeding with tests...');
-  return serverProcess;
-}
-
-async function runTests() {
-  console.log('========================================================');
-  console.log('🧪 EduManage — Automated QA & Integration Test Runner');
-  console.log('========================================================\n');
-
-  let serverProcess = null;
-  try {
-    serverProcess = await startServerIfNeeded();
-  } catch (err) {
-    console.warn('Could not auto-start server:', err.message);
-  }
-
-  let passed = 0;
-  let failed = 0;
-
-  function assert(condition, message) {
-    if (condition) {
-      console.log(`  ✅ PASS: ${message}`);
-      passed++;
-    } else {
-      console.error(`  ❌ FAIL: ${message}`);
-      failed++;
-    }
-  }
-
-  try {
-    // 1. Test Public Routes
-    console.log('--- 1. Testing Public & Landing Pages ---');
-    const homeRes = await fetch(`${BASE_URL}/`);
-    assert(homeRes.status === 200, 'Landing page (/) returns HTTP 200 OK');
-
-    const loginRes = await fetch(`${BASE_URL}/login`);
-    assert(loginRes.status === 200, 'Login page (/login) returns HTTP 200 OK');
-
-    // 2. Test Authentication
-    console.log('\n--- 2. Testing Authentication & Session Management ---');
-    let adminCookie = '';
-    let teacherCookie = '';
-    let studentCookie = '';
-
-    // Invalid login
-    const invalidRes = await fetch(`${BASE_URL}/api/auth/login`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ email: 'fake@edumanage.com', password: 'wrongpassword' }),
-    });
-    assert(invalidRes.status === 401, 'Invalid credentials rejected with HTTP 401');
-
-    // Admin Login
-    const adminRes = await fetch(`${BASE_URL}/api/auth/login`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ email: 'admin@edumanage.com', password: 'admin123' }),
-    });
-    const adminData = await adminRes.json();
-    adminCookie = adminRes.headers.get('set-cookie') || '';
-    assert(adminRes.status === 200 && adminData.user?.role === 'ADMIN', 'Admin login successful');
-
-    // Teacher Login
-    const teacherRes = await fetch(`${BASE_URL}/api/auth/login`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ email: 'sarah.jenkins@edumanage.com', password: 'teacher123' }),
-    });
-    const teacherData = await teacherRes.json();
-    teacherCookie = teacherRes.headers.get('set-cookie') || '';
-    assert(teacherRes.status === 200 && teacherData.user?.role === 'TEACHER', 'Teacher login successful');
-
-    // Student Login
-    const studentRes = await fetch(`${BASE_URL}/api/auth/login`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ email: 'alex.morgan@edumanage.com', password: 'student123' }),
-    });
-    const studentData = await studentRes.json();
-    studentCookie = studentRes.headers.get('set-cookie') || '';
-    assert(studentRes.status === 200 && studentData.user?.role === 'STUDENT', 'Student login successful');
-
-    // Demo Switcher
-    const demoRes = await fetch(`${BASE_URL}/api/auth/demo-switch`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ role: 'ADMIN' }),
-    });
-    const demoData = await demoRes.json();
-    assert(demoRes.status === 200 && demoData.user?.role === 'ADMIN', '1-Click Demo Switcher works for ADMIN');
-
-    // Auth /me check
-    const meRes = await fetch(`${BASE_URL}/api/auth/me`, {
-      headers: { Cookie: adminCookie },
-    });
-    const meData = await meRes.json();
-    assert(meRes.status === 200 && meData.user?.email === 'admin@edumanage.com', 'GET /api/auth/me validates session cookie');
-
-    // 3. Test RBAC Security & Boundary Checks
-    console.log('\n--- 3. Testing RBAC Security & Boundary Checks ---');
-    const noAuthRes = await fetch(`${BASE_URL}/api/students`);
-    assert(noAuthRes.status === 401, 'Unauthenticated request to /api/students returns 401 Unauthorized');
-
-    const studentForbiddenRes = await fetch(`${BASE_URL}/api/teachers`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', Cookie: studentCookie },
-      body: JSON.stringify({ name: 'Hacker', email: 'hack@test.com', employeeId: 'TCH-999', department: 'None' }),
-    });
-    assert(studentForbiddenRes.status === 403, 'Student creating faculty blocked with HTTP 403 Forbidden');
-
-    const teacherForbiddenRes = await fetch(`${BASE_URL}/api/classes/fake-id`, {
-      method: 'DELETE',
-      headers: { Cookie: teacherCookie },
-    });
-    assert(teacherForbiddenRes.status === 403, 'Teacher deleting class blocked with HTTP 403 Forbidden');
-
-    // 4. Test Role-Specific Analytics
-    console.log('\n--- 4. Testing Role-Specific Analytics (/api/stats) ---');
-    const adminStatsRes = await fetch(`${BASE_URL}/api/stats`, { headers: { Cookie: adminCookie } });
-    const adminStats = await adminStatsRes.json();
-    assert(
-      adminStats.totalStudents >= 6 &&
-        adminStats.totalTeachers >= 3 &&
-        adminStats.attendanceChart?.length > 0 &&
-        adminStats.feeDistribution?.length > 0,
-      'Admin analytics returns institutional KPIs and charts'
-    );
-
-    const teacherStatsRes = await fetch(`${BASE_URL}/api/stats`, { headers: { Cookie: teacherCookie } });
-    const teacherStats = await teacherStatsRes.json();
-    assert(teacherStats.totalClasses >= 1, 'Teacher analytics returns assigned classes and students');
-
-    const studentStatsRes = await fetch(`${BASE_URL}/api/stats`, { headers: { Cookie: studentCookie } });
-    const studentStats = await studentStatsRes.json();
-    assert(studentStats.student?.user?.name === 'Alex Morgan' && studentStats.gpa > 0, 'Student analytics returns personalized student metrics');
-
-    // 5. Test Admin CRUD Workflows
-    console.log('\n--- 5. Testing Full Admin CRUD Workflows ---');
-
-    // Class CRUD
-    const classRes = await fetch(`${BASE_URL}/api/classes`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', Cookie: adminCookie },
-      body: JSON.stringify({
-        name: 'Grade 9-QA',
-        section: 'QA-1',
-        gradeLevel: 'Grade 9',
-        roomNumber: 'Room 909',
-        capacity: 25,
-      }),
-    });
-    const classData = await classRes.json();
-    const testClassId = classData.class?.id;
-    assert(classRes.status === 201 && testClassId, 'Created test Class "Grade 9-QA"');
-
-    // Add subject
-    const subRes = await fetch(`${BASE_URL}/api/subjects`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', Cookie: adminCookie },
-      body: JSON.stringify({
-        name: 'Robotics Engineering',
-        code: 'ROB-101',
-        classId: testClassId,
-      }),
-    });
-    const subData = await subRes.json();
-    assert(subRes.status === 201 && subData.subject?.id, 'Added Subject "Robotics Engineering" to class');
-
-    // Student CRUD
-    const createStudentRes = await fetch(`${BASE_URL}/api/students`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', Cookie: adminCookie },
-      body: JSON.stringify({
-        name: 'Lucas Test Student',
-        email: 'lucas.test@edumanage.com',
-        rollNumber: '9QA-01',
-        admissionNumber: 'ADM-2025-9999',
-        classId: testClassId,
-        gender: 'MALE',
-        parentName: 'Thomas Test',
-        parentPhone: '+1 (555) 999-8888',
-      }),
-    });
-    const createStudentData = await createStudentRes.json();
-    const testStudentId = createStudentData.student?.id;
-    assert(createStudentRes.status === 201 && testStudentId, 'Enrolled new Student "Lucas Test Student"');
-
-    // Read student 360 profile
-    const profileRes = await fetch(`${BASE_URL}/api/students/${testStudentId}`, {
-      headers: { Cookie: adminCookie },
-    });
-    const profileData = await profileRes.json();
-    assert(profileRes.status === 200 && profileData.student?.rollNumber === '9QA-01', 'Retrieved Student 360° Profile');
-
-    // Update student
-    const updateRes = await fetch(`${BASE_URL}/api/students/${testStudentId}`, {
-      method: 'PUT',
-      headers: { 'Content-Type': 'application/json', Cookie: adminCookie },
-      body: JSON.stringify({ rollNumber: '9QA-02', address: '123 Verified Lane' }),
-    });
-    const updateData = await updateRes.json();
-    assert(updateRes.status === 200 && updateData.student?.rollNumber === '9QA-02', 'Updated Student details and verified database persistence');
-
-    // Teacher CRUD
-    const teacherCrudRes = await fetch(`${BASE_URL}/api/teachers`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', Cookie: adminCookie },
-      body: JSON.stringify({
-        name: 'Prof. Marcus Vance',
-        email: 'marcus.vance@edumanage.com',
-        employeeId: 'TCH-2025-099',
-        qualification: 'Ph.D. Computer Science',
-        department: 'Science & Mathematics',
-        specialization: 'Artificial Intelligence',
-      }),
-    });
-    const teacherCrudData = await teacherCrudRes.json();
-    const testTeacherId = teacherCrudData.teacher?.id;
-    assert(teacherCrudRes.status === 201 && testTeacherId, 'Created Faculty Member "Prof. Marcus Vance"');
-
-    // Delete Teacher
-    const delTeacherRes = await fetch(`${BASE_URL}/api/teachers/${testTeacherId}`, {
-      method: 'DELETE',
-      headers: { Cookie: adminCookie },
-    });
-    assert(delTeacherRes.status === 200, 'Deleted test Faculty Member successfully');
-
-    // Attendance Batch Recording
-    const attRes = await fetch(`${BASE_URL}/api/attendance`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', Cookie: adminCookie },
-      body: JSON.stringify({
-        classId: testClassId,
-        date: '2025-05-10',
-        records: [
-          { studentId: testStudentId, status: 'PRESENT', remarks: 'Attended on time' },
-        ],
-      }),
-    });
-    const attData = await attRes.json();
-    assert(attRes.status === 200 && attData.records?.length === 1, 'Batch Attendance recording verified and persisted');
-
-    // Examination & Gradebook Flow
-    const examRes = await fetch(`${BASE_URL}/api/examinations`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', Cookie: adminCookie },
-      body: JSON.stringify({
-        name: 'Term 3 Innovation Assessment 2025',
-        examType: 'UNIT_TEST',
-        startDate: '2025-06-01',
-        endDate: '2025-06-05',
-        term: 'Term 3',
-        status: 'UPCOMING',
-      }),
-    });
-    const examData = await examRes.json();
-    const testExamId = examData.examination?.id;
-    assert(examRes.status === 201 && testExamId, 'Scheduled new Examination session');
-
-    // Get subject ID for class
-    const subListRes = await fetch(`${BASE_URL}/api/subjects?classId=${testClassId}`, {
-      headers: { Cookie: adminCookie },
-    });
-    const subListData = await subListRes.json();
-    const subjectId = subListData.subjects?.[0]?.id;
-
-    if (subjectId) {
-      const marksRes = await fetch(`${BASE_URL}/api/results`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', Cookie: adminCookie },
-        body: JSON.stringify({
-          examId: testExamId,
-          subjectId: subjectId,
-          records: [
-            { studentId: testStudentId, marksObtained: 95, totalMarks: 100, remarks: 'Excellent project work' },
-          ],
-        }),
+    const req = http.request(url, reqOptions, (res) => {
+      let data = '';
+      res.on('data', (chunk) => (data += chunk));
+      res.on('end', () => {
+        let json = null;
+        try {
+          json = JSON.parse(data);
+        } catch (e) {
+          json = data;
+        }
+        resolve({
+          status: res.statusCode,
+          headers: res.headers,
+          data: json,
+        });
       });
-      const marksData = await marksRes.json();
-      assert(
-        marksRes.status === 200 && marksData.results?.[0]?.grade === 'A+' && marksData.results?.[0]?.percentage === 95,
-        'Recorded Exam Marks and verified automatic Grade calculation (95% -> A+)'
-      );
+    });
+
+    req.on('error', (err) => reject(err));
+
+    if (options.body) {
+      const bodyData =
+        typeof options.body === 'string' ? options.body : JSON.stringify(options.body);
+      req.setHeader('Content-Type', 'application/json');
+      req.setHeader('Content-Length', Buffer.byteLength(bodyData));
+      req.write(bodyData);
     }
 
-    // Clean up test exam
-    await fetch(`${BASE_URL}/api/examinations?id=${testExamId}`, {
-      method: 'DELETE',
-      headers: { Cookie: adminCookie },
-    });
+    req.end();
+  });
+}
 
-    // Fee Invoicing & Payment Settlement Flow
-    const feeRes = await fetch(`${BASE_URL}/api/fees`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', Cookie: adminCookie },
-      body: JSON.stringify({
-        studentId: testStudentId,
-        title: 'Robotics Workshop Kit Fee',
-        amount: 300,
-        dueDate: '2025-07-01',
-        remarks: 'One-time hardware kit',
-      }),
-    });
-    const feeData = await feeRes.json();
-    const testFeeId = feeData.fee?.id;
-    assert(feeRes.status === 201 && testFeeId, 'Generated Fee Invoice ($300)');
+function sleep(ms) {
+  return new Promise((r) => setTimeout(r, ms));
+}
 
-    // Record Partial Payment ($150)
-    const payRes = await fetch(`${BASE_URL}/api/fees/${testFeeId}`, {
-      method: 'PUT',
-      headers: { 'Content-Type': 'application/json', Cookie: adminCookie },
-      body: JSON.stringify({
-        paidAmount: 150,
-        paymentMethod: 'ONLINE',
-      }),
-    });
-    const payData = await payRes.json();
-    assert(payRes.status === 200 && payData.fee?.status === 'PARTIAL', 'Recorded Partial Payment ($150) -> Status computed as PARTIAL');
+async function startServer() {
+  console.log(`\n⚙️ Starting Next.js test server on port ${PORT}...`);
+  serverProcess = spawn('npx', ['next', 'start', '-p', PORT.toString()], {
+    shell: true,
+    stdio: 'ignore',
+    env: { ...process.env, PORT: PORT.toString(), NODE_ENV: 'production' },
+  });
 
-    // Record Full Settle ($300)
-    const settleRes = await fetch(`${BASE_URL}/api/fees/${testFeeId}`, {
-      method: 'PUT',
-      headers: { 'Content-Type': 'application/json', Cookie: adminCookie },
-      body: JSON.stringify({
-        paidAmount: 300,
-        paymentMethod: 'ONLINE',
-      }),
-    });
-    const settleData = await settleRes.json();
-    assert(settleRes.status === 200 && settleData.fee?.status === 'PAID', 'Recorded Full Settlement ($300) -> Status computed as PAID');
+  // Wait for server to become responsive
+  for (let i = 0; i < 30; i++) {
+    await sleep(1000);
+    try {
+      const res = await makeRequest('/');
+      if (res.status === 200) {
+        console.log('🚀 Test server is ready!\n');
+        return;
+      }
+    } catch (e) {
+      // Keep waiting
+    }
+  }
+  throw new Error('Test server failed to start in 30 seconds');
+}
 
-    // Clean up test fee
-    await fetch(`${BASE_URL}/api/fees/${testFeeId}`, {
-      method: 'DELETE',
-      headers: { Cookie: adminCookie },
-    });
-
-    // Academic Records Flow
-    const acadRes = await fetch(`${BASE_URL}/api/academic-records`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', Cookie: adminCookie },
-      body: JSON.stringify({
-        studentId: testStudentId,
-        academicYear: '2024-2025',
-        term: 'Term 1',
-        gpa: 3.92,
-        totalCredits: 22,
-        rank: 1,
-        status: 'PROMOTED',
-        remarks: 'Distinction in all subjects',
-      }),
-    });
-    const acadData = await acadRes.json();
-    assert(acadRes.status === 201 && acadData.record?.gpa === 3.92, 'Saved Academic Record and GPA Transcript');
-
-    // Clean up test student & class
-    await fetch(`${BASE_URL}/api/students/${testStudentId}`, {
-      method: 'DELETE',
-      headers: { Cookie: adminCookie },
-    });
-    assert(true, 'Deleted test Student (cascaded cleanly)');
-
-    await fetch(`${BASE_URL}/api/classes/${testClassId}`, {
-      method: 'DELETE',
-      headers: { Cookie: adminCookie },
-    });
-    assert(true, 'Deleted test Class');
-
-  } catch (err) {
-    assert(false, `Test error: ${err.message}`);
-  } finally {
-    if (serverProcess) {
+async function stopServer() {
+  if (serverProcess) {
+    console.log('\n🛑 Stopping test server...');
+    if (process.platform === 'win32') {
+      spawn('taskkill', ['/pid', serverProcess.pid.toString(), '/f', '/t'], { shell: true });
+    } else {
       serverProcess.kill();
     }
   }
+}
 
-  console.log('\n========================================================');
-  console.log(`📊 Test Execution Summary: ${passed} PASSED, ${failed} FAILED`);
-  console.log('========================================================\n');
+async function runTests() {
+  try {
+    await startServer();
 
-  if (failed > 0) {
+    console.log('========================================================');
+    console.log('🍽️ Starting Comprehensive DineDesk API & Functional Tests');
+    console.log('========================================================\n');
+
+    // 1. Public Pages
+    console.log('1. Public Front-of-House Endpoints');
+    const homeRes = await makeRequest('/');
+    assert(homeRes.status === 200, 'GET / landing page returns HTTP 200');
+
+    const menuRes = await makeRequest('/menu');
+    assert(menuRes.status === 200, 'GET /menu digital menu returns HTTP 200');
+
+    const resPageRes = await makeRequest('/reservations');
+    assert(resPageRes.status === 200, 'GET /reservations booking page returns HTTP 200');
+
+    const loginRes = await makeRequest('/login');
+    assert(loginRes.status === 200, 'GET /login auth portal returns HTTP 200');
+
+    // 2. Menu & Categories Querying
+    console.log('\n2. Digital Menu & Category Catalog API');
+    const catRes = await makeRequest('/api/categories');
+    assert(
+      catRes.status === 200 && catRes.data.categories?.length >= 6,
+      `GET /api/categories returns ${catRes.data.categories?.length} categories`
+    );
+
+    const itemsRes = await makeRequest('/api/menu');
+    assert(
+      itemsRes.status === 200 && itemsRes.data.items?.length >= 15,
+      `GET /api/menu returns ${itemsRes.data.items?.length} gourmet dishes`
+    );
+
+    const vegRes = await makeRequest('/api/menu?isVeg=true');
+    assert(
+      vegRes.status === 200 && vegRes.data.items?.every((i) => i.isVeg),
+      'GET /api/menu?isVeg=true strictly filters vegetarian dishes'
+    );
+
+    const searchRes = await makeRequest('/api/menu?search=Truffle');
+    assert(
+      searchRes.status === 200 && searchRes.data.items?.length > 0,
+      'GET /api/menu?search=Truffle returns matching dishes'
+    );
+
+    // 3. Authentication & RBAC
+    console.log('\n3. Authentication & Role-Based Access Control (RBAC)');
+    const adminLogin = await makeRequest('/api/auth/login', {
+      method: 'POST',
+      body: { email: 'admin@dinedesk.com', password: 'admin123' },
+    });
+    assert(
+      adminLogin.status === 200 && adminLogin.data.user?.role === 'ADMIN',
+      'Admin login with valid credentials returns HTTP 200'
+    );
+
+    const adminCookie = adminLogin.headers['set-cookie']?.[0]?.split(';')[0] || '';
+
+    const staffLogin = await makeRequest('/api/auth/login', {
+      method: 'POST',
+      body: { email: 'chef.marco@dinedesk.com', password: 'staff123' },
+    });
+    assert(
+      staffLogin.status === 200 && staffLogin.data.user?.role === 'STAFF',
+      'Kitchen Staff login returns HTTP 200'
+    );
+    const staffCookie = staffLogin.headers['set-cookie']?.[0]?.split(';')[0] || '';
+
+    const customerLogin = await makeRequest('/api/auth/login', {
+      method: 'POST',
+      body: { email: 'sophia.miller@example.com', password: 'customer123' },
+    });
+    assert(
+      customerLogin.status === 200 && customerLogin.data.user?.role === 'CUSTOMER',
+      'Customer login returns HTTP 200'
+    );
+    const customerCookie = customerLogin.headers['set-cookie']?.[0]?.split(';')[0] || '';
+
+    const invalidLogin = await makeRequest('/api/auth/login', {
+      method: 'POST',
+      body: { email: 'admin@dinedesk.com', password: 'wrongpassword' },
+    });
+    assert(invalidLogin.status === 401, 'Login with invalid password rejected with HTTP 401');
+
+    const meRes = await makeRequest('/api/auth/me', {
+      headers: { Cookie: adminCookie },
+    });
+    assert(meRes.status === 200 && meRes.data.user?.email === 'admin@dinedesk.com', 'GET /api/auth/me returns authenticated admin');
+
+    // Customer RBAC restriction
+    const customerAddDish = await makeRequest('/api/menu', {
+      method: 'POST',
+      headers: { Cookie: customerCookie },
+      body: { name: 'Illegal Dish', price: 20 },
+    });
+    assert(customerAddDish.status === 403, 'Customer blocked from creating menu item (HTTP 403)');
+
+    // 4. Table Management & Reservations
+    console.log('\n4. Table Management & Reservation Conflict Engine');
+    const tablesRes = await makeRequest('/api/tables');
+    assert(
+      tablesRes.status === 200 && tablesRes.data.tables?.length >= 10,
+      `GET /api/tables returns ${tablesRes.data.tables?.length} restaurant tables`
+    );
+
+    const testTable = tablesRes.data.tables[0];
+
+    // Create reservation
+    const today = new Date().toISOString().split('T')[0];
+    const newRes = await makeRequest('/api/reservations', {
+      method: 'POST',
+      headers: { Cookie: customerCookie },
+      body: {
+        customerName: 'Marcus Vance',
+        customerPhone: '+1 (555) 999-8888',
+        customerEmail: 'marcus.v@example.com',
+        reservationDate: today,
+        timeSlot: '08:30 PM',
+        guestCount: 2,
+        tableId: testTable.id,
+        specialRequests: 'Window view please',
+      },
+    });
+    assert(newRes.status === 201, 'Created new Table Reservation with confirmation');
+    const createdReservationId = newRes.data.reservation?.id;
+
+    // Collision check: attempt booking same table at same date & slot
+    const conflictRes = await makeRequest('/api/reservations', {
+      method: 'POST',
+      headers: { Cookie: customerCookie },
+      body: {
+        customerName: 'Another Guest',
+        customerPhone: '+1 (555) 000-1111',
+        reservationDate: today,
+        timeSlot: '08:30 PM',
+        guestCount: 2,
+        tableId: testTable.id,
+      },
+    });
+    assert(conflictRes.status === 409, 'Anti-collision engine prevents double-booking on same table/slot (HTTP 409)');
+
+    // Staff seats the reservation party
+    const seatRes = await makeRequest(`/api/reservations/${createdReservationId}`, {
+      method: 'PUT',
+      headers: { Cookie: staffCookie },
+      body: { status: 'SEATED' },
+    });
+    assert(seatRes.status === 200 && seatRes.data.reservation?.status === 'SEATED', 'Staff seated guest party at table');
+
+    // 5. Order Placement, Discount Calculations & Lifecycle
+    console.log('\n5. Order Placement, Pricing Engine & Kitchen KDS Lifecycle');
+    const dish1 = itemsRes.data.items[0];
+    const dish2 = itemsRes.data.items[1];
+
+    const placeOrderRes = await makeRequest('/api/orders', {
+      method: 'POST',
+      headers: { Cookie: customerCookie },
+      body: {
+        items: [
+          { menuItemId: dish1.id, quantity: 2, specialInstructions: 'Extra crisp' },
+          { menuItemId: dish2.id, quantity: 1 },
+        ],
+        orderType: 'DINE_IN',
+        tableId: testTable.id,
+        customerName: 'Sophia Miller',
+        customerPhone: '+1 (555) 912-3456',
+        couponCode: 'DINE10',
+        paymentMethod: 'CARD',
+      },
+    });
+
+    assert(placeOrderRes.status === 201, 'Order placed successfully with itemized lines & payment');
+    const placedOrder = placeOrderRes.data.order;
+    assert(placedOrder.discount > 0, 'Coupon code DINE10 applied 10% discount');
+    assert(placedOrder.tax > 0, 'Tax computed at 8.25%');
+
+    // KDS Lifecycle transitions
+    const cookRes = await makeRequest(`/api/orders/${placedOrder.id}`, {
+      method: 'PUT',
+      headers: { Cookie: staffCookie },
+      body: { status: 'PREPARING' },
+    });
+    assert(cookRes.status === 200 && cookRes.data.order?.status === 'PREPARING', 'KDS transitioned ticket to PREPARING');
+
+    const readyRes = await makeRequest(`/api/orders/${placedOrder.id}`, {
+      method: 'PUT',
+      headers: { Cookie: staffCookie },
+      body: { status: 'READY' },
+    });
+    assert(readyRes.status === 200 && readyRes.data.order?.status === 'READY', 'KDS transitioned ticket to READY');
+
+    const completeRes = await makeRequest(`/api/orders/${placedOrder.id}`, {
+      method: 'PUT',
+      headers: { Cookie: staffCookie },
+      body: { status: 'COMPLETED' },
+    });
+    assert(completeRes.status === 200 && completeRes.data.order?.status === 'COMPLETED', 'KDS transitioned ticket to COMPLETED');
+
+    // 6. Admin Menu CRUD & Availability Toggle
+    console.log('\n6. Admin Culinary Menu CRUD & Availability Engine');
+    const createDishRes = await makeRequest('/api/menu', {
+      method: 'POST',
+      headers: { Cookie: adminCookie },
+      body: {
+        categoryId: catRes.data.categories[0].id,
+        name: 'Test Gourmet Bruschetta',
+        description: 'Crispy artisanal toast with seasonal toppings.',
+        price: 14.50,
+        prepTimeMinutes: 10,
+        isVeg: true,
+      },
+    });
+    assert(createDishRes.status === 201, 'Admin created new menu dish');
+    const testDishId = createDishRes.data.item?.id;
+
+    const toggleRes = await makeRequest(`/api/menu/${testDishId}`, {
+      method: 'PATCH',
+      headers: { Cookie: adminCookie },
+      body: { isAvailable: false },
+    });
+    assert(toggleRes.status === 200 && toggleRes.data.item?.isAvailable === false, 'Admin marked dish as Sold Out');
+
+    const deleteDishRes = await makeRequest(`/api/menu/${testDishId}`, {
+      method: 'DELETE',
+      headers: { Cookie: adminCookie },
+    });
+    assert(deleteDishRes.status === 200, 'Admin deleted test dish');
+
+    // 7. Executive Analytics & Reporting
+    console.log('\n7. Executive Analytics & Reporting');
+    const analyticsRes = await makeRequest('/api/analytics', {
+      headers: { Cookie: adminCookie },
+    });
+    assert(
+      analyticsRes.status === 200 &&
+        analyticsRes.data.summary?.grossRevenue > 0 &&
+        analyticsRes.data.topSellingDishes?.length > 0,
+      'GET /api/analytics computes live gross revenue, occupancy, and top dishes'
+    );
+
+    const customersRes = await makeRequest('/api/customers', {
+      headers: { Cookie: adminCookie },
+    });
+    assert(
+      customersRes.status === 200 && customersRes.data.customers?.length > 0,
+      `GET /api/customers returns customer directory (${customersRes.data.customers?.length} diners)`
+    );
+
+    const paymentsRes = await makeRequest('/api/payments', {
+      headers: { Cookie: adminCookie },
+    });
+    assert(
+      paymentsRes.status === 200 && paymentsRes.data.payments?.length > 0,
+      `GET /api/payments returns payment transaction log (Total collected: $${paymentsRes.data.totalCollected})`
+    );
+
+    // Clean up created test reservation
+    await makeRequest(`/api/reservations/${createdReservationId}`, {
+      method: 'DELETE',
+      headers: { Cookie: adminCookie },
+    });
+
+    console.log('\n========================================================');
+    console.log(`📊 Test Execution Summary: ${passedCount} PASSED, ${failedCount} FAILED`);
+    console.log('========================================================\n');
+
+    if (failedCount > 0) {
+      process.exit(1);
+    }
+  } catch (err) {
+    console.error('Test execution error:', err);
     process.exit(1);
+  } finally {
+    await stopServer();
   }
 }
 

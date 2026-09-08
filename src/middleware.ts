@@ -3,16 +3,15 @@ import type { NextRequest } from 'next/server';
 
 export function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
-  const token = request.cookies.get('edumanage_session_token')?.value;
+  const token = request.cookies.get('dinedesk_session_token')?.value;
 
-  // Public paths
-  if (
-    pathname === '/' ||
-    pathname === '/login' ||
-    pathname.startsWith('/api/auth') ||
-    pathname.startsWith('/_next') ||
-    pathname.includes('.')
-  ) {
+  // Protected paths
+  const isAdminPath = pathname.startsWith('/admin');
+  const isStaffPath = pathname.startsWith('/staff');
+  const isProfilePath = pathname.startsWith('/profile');
+
+  // If accessing non-protected path, allow through
+  if (!isAdminPath && !isStaffPath && !isProfilePath) {
     return NextResponse.next();
   }
 
@@ -33,27 +32,21 @@ export function middleware(request: NextRequest) {
 
       const userRole = payload.role;
 
-      // Role authorization enforcement
-      if (pathname.startsWith('/admin') && userRole !== 'ADMIN') {
-        if (userRole === 'TEACHER') return NextResponse.redirect(new URL('/teacher', request.url));
-        if (userRole === 'STUDENT') return NextResponse.redirect(new URL('/student', request.url));
-        return NextResponse.redirect(new URL('/login', request.url));
+      // Admin path access control
+      if (isAdminPath && userRole !== 'ADMIN') {
+        if (userRole === 'STAFF') return NextResponse.redirect(new URL('/staff', request.url));
+        return NextResponse.redirect(new URL('/', request.url));
       }
 
-      if (pathname.startsWith('/teacher') && userRole !== 'TEACHER' && userRole !== 'ADMIN') {
-        if (userRole === 'STUDENT') return NextResponse.redirect(new URL('/student', request.url));
-        return NextResponse.redirect(new URL('/login', request.url));
-      }
-
-      if (pathname.startsWith('/student') && userRole !== 'STUDENT' && userRole !== 'ADMIN') {
-        if (userRole === 'TEACHER') return NextResponse.redirect(new URL('/teacher', request.url));
-        return NextResponse.redirect(new URL('/login', request.url));
+      // Staff path access control
+      if (isStaffPath && userRole !== 'STAFF' && userRole !== 'ADMIN') {
+        return NextResponse.redirect(new URL('/', request.url));
       }
     }
   } catch (err) {
     // If token is invalid, redirect to login
     const response = NextResponse.redirect(new URL('/login', request.url));
-    response.cookies.delete('edumanage_session_token');
+    response.cookies.delete('dinedesk_session_token');
     return response;
   }
 
@@ -61,5 +54,5 @@ export function middleware(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ['/admin/:path*', '/teacher/:path*', '/student/:path*'],
+  matcher: ['/admin/:path*', '/staff/:path*', '/profile/:path*'],
 };

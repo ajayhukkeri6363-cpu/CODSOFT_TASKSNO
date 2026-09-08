@@ -1,34 +1,43 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import {
-  GraduationCap,
-  ShieldCheck,
-  BookOpen,
-  Users,
-  CalendarCheck,
-  Award,
-  CreditCard,
-  FileBadge,
+  UtensilsCrossed,
+  Calendar,
+  Clock,
   Sparkles,
+  Flame,
+  ShieldCheck,
   ArrowRight,
+  Star,
   CheckCircle2,
-  Lock,
-  Layers,
-  BarChart3,
-  ExternalLink,
+  ChefHat,
+  ShoppingBag,
+  Percent,
 } from 'lucide-react';
 import { useToast } from '@/components/ui/Toast';
+import { formatCurrency } from '@/lib/utils';
+import { MenuItemWithCategory } from '@/lib/types';
 
-export default function LandingPage() {
+export default function HomePage() {
   const router = useRouter();
-  const { toast } = useToast();
-  const [loadingRole, setLoadingRole] = useState<string | null>(null);
+  const { success, error } = useToast();
+  const [popularItems, setPopularItems] = useState<MenuItemWithCategory[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
 
-  const handleQuickDemoLogin = async (role: 'ADMIN' | 'TEACHER' | 'STUDENT') => {
-    setLoadingRole(role);
+  useEffect(() => {
+    fetch('/api/menu?isPopular=true')
+      .then((res) => (res.ok ? res.json() : { items: [] }))
+      .then((data) => {
+        setPopularItems(data.items.slice(0, 6));
+        setIsLoading(false);
+      })
+      .catch(() => setIsLoading(false));
+  }, []);
+
+  const handleDemoLaunch = async (role: 'CUSTOMER' | 'STAFF' | 'ADMIN') => {
     try {
       const res = await fetch('/api/auth/demo-switch', {
         method: 'POST',
@@ -37,280 +46,314 @@ export default function LandingPage() {
       });
       const data = await res.json();
       if (res.ok) {
-        toast.success(`Logged in as ${role} demo user!`);
-        if (role === 'ADMIN') router.push('/admin');
-        else if (role === 'TEACHER') router.push('/teacher');
-        else router.push('/student');
+        success(`Logged in as demo ${role}: ${data.user.name}`);
+        router.push(data.redirect);
+        router.refresh();
       } else {
-        toast.error(data.error || 'Failed to login demo user');
+        error(data.error || 'Failed to switch demo account');
       }
-    } catch (error) {
-      toast.error('Network error occurred during demo login');
-    } finally {
-      setLoadingRole(null);
+    } catch {
+      error('Error connecting to demo switch service');
     }
   };
 
   return (
-    <div className="min-h-screen bg-slate-900 text-slate-100 selection:bg-indigo-500 selection:text-white">
-      {/* Header */}
-      <header className="sticky top-0 z-50 border-b border-slate-800 bg-slate-900/80 backdrop-blur-md">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
-          <div className="flex items-center gap-2.5">
-            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-tr from-indigo-500 to-violet-600 text-white shadow-lg shadow-indigo-500/25">
-              <GraduationCap className="h-6 w-6" />
+    <div className="space-y-20 pb-20">
+      {/* Hero Section */}
+      <section className="relative overflow-hidden bg-slate-950 text-white py-24 sm:py-32">
+        <div className="absolute inset-0 z-0 opacity-25">
+          <img
+            src="https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?w=1800&auto=format&fit=crop&q=80"
+            alt="Restaurant Interior"
+            className="w-full h-full object-cover"
+          />
+          <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/80 to-transparent" />
+        </div>
+
+        <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="max-w-3xl space-y-6">
+            <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-amber-500/20 border border-amber-500/30 text-amber-400 text-xs font-bold uppercase tracking-wider backdrop-blur-md">
+              <Sparkles className="w-3.5 h-3.5" />
+              <span>CodSoft Full Stack Task 2 • DineDesk Platform</span>
             </div>
-            <div>
-              <span className="font-extrabold text-xl tracking-tight text-white">EduManage</span>
-              <span className="text-[10px] block text-indigo-400 font-semibold tracking-wider uppercase -mt-1">
-                SIS Suite
-              </span>
+
+            <h1 className="text-4xl sm:text-6xl font-black tracking-tight leading-tight sm:leading-none text-white">
+              Artisanal Cuisine Meets <span className="text-amber-500">Modern Digital Dining.</span>
+            </h1>
+
+            <p className="text-lg sm:text-xl text-slate-300 font-normal leading-relaxed">
+              Experience seamless table reservations, interactive digital menus, online ordering for dine-in, takeaway, and delivery, and a real-time kitchen operations hub.
+            </p>
+
+            <div className="flex flex-wrap items-center gap-4 pt-4">
+              <Link
+                href="/menu"
+                className="px-6 py-3.5 rounded-2xl text-sm font-bold bg-amber-500 hover:bg-amber-600 text-slate-950 shadow-lg shadow-amber-500/30 transition flex items-center gap-2 group"
+              >
+                <UtensilsCrossed className="w-4 h-4" />
+                <span>Explore Digital Menu</span>
+                <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
+              </Link>
+              <Link
+                href="/reservations"
+                className="px-6 py-3.5 rounded-2xl text-sm font-bold bg-white/10 hover:bg-white/20 text-white border border-white/20 backdrop-blur-md transition flex items-center gap-2"
+              >
+                <Calendar className="w-4 h-4 text-amber-400" />
+                <span>Reserve a Table</span>
+              </Link>
+            </div>
+
+            {/* Quick Feature Badges */}
+            <div className="pt-8 grid grid-cols-2 sm:grid-cols-3 gap-4 border-t border-slate-800/80 text-xs text-slate-300">
+              <div className="flex items-center gap-2 font-medium">
+                <CheckCircle2 className="w-4 h-4 text-amber-500 shrink-0" />
+                <span>Live Kitchen KDS Display</span>
+              </div>
+              <div className="flex items-center gap-2 font-medium">
+                <CheckCircle2 className="w-4 h-4 text-amber-500 shrink-0" />
+                <span>Table Collision Prevention</span>
+              </div>
+              <div className="flex items-center gap-2 font-medium">
+                <CheckCircle2 className="w-4 h-4 text-amber-500 shrink-0" />
+                <span>Real-Time Order Tracking</span>
+              </div>
             </div>
           </div>
+        </div>
+      </section>
 
-          <div className="flex items-center gap-3">
-            <Link
-              href="/login"
-              className="px-4 py-2 text-xs font-semibold text-slate-300 hover:text-white hover:bg-slate-800 rounded-lg transition-colors"
-            >
-              Sign In
-            </Link>
+      {/* 1-Click Demo Showcase Portals */}
+      <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="text-center max-w-2xl mx-auto space-y-3 mb-12">
+          <span className="text-xs font-bold uppercase tracking-widest text-amber-600 bg-amber-50 px-3 py-1 rounded-full border border-amber-200">
+            Interactive Internship Demo
+          </span>
+          <h2 className="text-3xl font-black text-slate-900 tracking-tight">
+            Explore All 3 Role Portals in 1 Click
+          </h2>
+          <p className="text-slate-500 text-sm">
+            Launch instantly into any role to test dedicated workflows, permissions, and dashboards.
+          </p>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+          {/* Card 1: Customer Portal */}
+          <div className="bg-white rounded-3xl p-8 border border-slate-100 shadow-md hover:shadow-xl transition flex flex-col justify-between group">
+            <div className="space-y-4">
+              <div className="w-12 h-12 rounded-2xl bg-amber-100 text-amber-600 flex items-center justify-center font-bold">
+                <ShoppingBag className="w-6 h-6" />
+              </div>
+              <h3 className="text-xl font-bold text-slate-900">Customer Portal</h3>
+              <p className="text-sm text-slate-500 leading-relaxed">
+                Browse categories, customize dietary preferences, add dishes to cart, book tables, and track order stages in real time.
+              </p>
+              <ul className="space-y-2 text-xs text-slate-600 pt-2">
+                <li className="flex items-center gap-2">
+                  <span className="w-1.5 h-1.5 rounded-full bg-amber-500" />
+                  <span>Cart & Checkout with coupon discounts</span>
+                </li>
+                <li className="flex items-center gap-2">
+                  <span className="w-1.5 h-1.5 rounded-full bg-amber-500" />
+                  <span>Interactive table booking with slot checks</span>
+                </li>
+                <li className="flex items-center gap-2">
+                  <span className="w-1.5 h-1.5 rounded-full bg-amber-500" />
+                  <span>Visual 5-stage order tracker & digital receipts</span>
+                </li>
+              </ul>
+            </div>
             <button
-              onClick={() => handleQuickDemoLogin('ADMIN')}
-              className="hidden sm:inline-flex items-center gap-1.5 px-4 py-2 text-xs font-bold text-white bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-500 hover:to-violet-500 rounded-lg shadow-md shadow-indigo-600/30 transition-all"
+              onClick={() => handleDemoLaunch('CUSTOMER')}
+              className="mt-8 w-full py-3 px-4 rounded-xl text-xs font-bold bg-amber-50 text-amber-800 hover:bg-amber-600 hover:text-white transition flex items-center justify-center gap-2"
             >
-              <Sparkles className="w-3.5 h-3.5" />
-              Live Demo Login
+              <span>Launch Customer Demo</span>
+              <ArrowRight className="w-3.5 h-3.5" />
+            </button>
+          </div>
+
+          {/* Card 2: Staff / Kitchen Portal */}
+          <div className="bg-white rounded-3xl p-8 border border-orange-200/80 shadow-md hover:shadow-xl transition flex flex-col justify-between group">
+            <div className="space-y-4">
+              <div className="w-12 h-12 rounded-2xl bg-orange-100 text-orange-600 flex items-center justify-center font-bold">
+                <Flame className="w-6 h-6" />
+              </div>
+              <h3 className="text-xl font-bold text-slate-900">Kitchen & Staff KDS</h3>
+              <p className="text-sm text-slate-500 leading-relaxed">
+                Live Kitchen Display System (KDS) Kanban board for cooks and floor leads to manage tickets, table occupancy, and reservations.
+              </p>
+              <ul className="space-y-2 text-xs text-slate-600 pt-2">
+                <li className="flex items-center gap-2">
+                  <span className="w-1.5 h-1.5 rounded-full bg-orange-500" />
+                  <span>1-Click ticket status transitions</span>
+                </li>
+                <li className="flex items-center gap-2">
+                  <span className="w-1.5 h-1.5 rounded-full bg-orange-500" />
+                  <span>Floor plan table occupancy live updater</span>
+                </li>
+                <li className="flex items-center gap-2">
+                  <span className="w-1.5 h-1.5 rounded-full bg-orange-500" />
+                  <span>Guest arrival check-in and table seating</span>
+                </li>
+              </ul>
+            </div>
+            <button
+              onClick={() => handleDemoLaunch('STAFF')}
+              className="mt-8 w-full py-3 px-4 rounded-xl text-xs font-bold bg-orange-500 text-white hover:bg-orange-600 transition flex items-center justify-center gap-2 shadow-md shadow-orange-500/20"
+            >
+              <span>Launch Kitchen Staff KDS</span>
+              <ArrowRight className="w-3.5 h-3.5" />
+            </button>
+          </div>
+
+          {/* Card 3: Admin Suite */}
+          <div className="bg-slate-900 text-white rounded-3xl p-8 border border-slate-800 shadow-md hover:shadow-xl transition flex flex-col justify-between group">
+            <div className="space-y-4">
+              <div className="w-12 h-12 rounded-2xl bg-amber-500/20 text-amber-400 flex items-center justify-center font-bold border border-amber-500/30">
+                <ShieldCheck className="w-6 h-6" />
+              </div>
+              <h3 className="text-xl font-bold text-white">Admin Control Center</h3>
+              <p className="text-sm text-slate-300 leading-relaxed">
+                Executive dashboard with real-time revenue analytics, complete menu item and category CRUD, table configurations, and customer logs.
+              </p>
+              <ul className="space-y-2 text-xs text-slate-300 pt-2">
+                <li className="flex items-center gap-2">
+                  <span className="w-1.5 h-1.5 rounded-full bg-amber-400" />
+                  <span>Sales revenue and top dishes Recharts graphs</span>
+                </li>
+                <li className="flex items-center gap-2">
+                  <span className="w-1.5 h-1.5 rounded-full bg-amber-400" />
+                  <span>Menu item CRUD with live availability toggling</span>
+                </li>
+                <li className="flex items-center gap-2">
+                  <span className="w-1.5 h-1.5 rounded-full bg-amber-400" />
+                  <span>Master orders, customers, and payments ledger</span>
+                </li>
+              </ul>
+            </div>
+            <button
+              onClick={() => handleDemoLaunch('ADMIN')}
+              className="mt-8 w-full py-3 px-4 rounded-xl text-xs font-bold bg-amber-500 text-slate-950 hover:bg-amber-400 transition flex items-center justify-center gap-2 font-black shadow-md shadow-amber-500/30"
+            >
+              <span>Launch Admin Dashboard</span>
+              <ArrowRight className="w-3.5 h-3.5" />
             </button>
           </div>
         </div>
-      </header>
-
-      {/* Hero Section */}
-      <section className="relative pt-16 pb-20 overflow-hidden">
-        {/* Glow effects */}
-        <div className="absolute top-1/4 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[350px] bg-indigo-600/20 blur-[120px] pointer-events-none rounded-full" />
-        <div className="absolute top-1/3 right-10 w-[300px] h-[250px] bg-violet-600/15 blur-[100px] pointer-events-none rounded-full" />
-
-        <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 text-center relative z-10">
-          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-indigo-500/10 border border-indigo-500/30 text-indigo-300 text-xs font-semibold mb-6">
-            <span className="flex h-2 w-2 rounded-full bg-emerald-400 animate-ping" />
-            CodSoft Full Stack Internship • Task 1 Submission
-          </div>
-
-          <h1 className="text-4xl sm:text-5xl md:text-6xl font-black tracking-tight text-white max-w-4xl mx-auto leading-[1.15]">
-            Complete Digital Operating System for{' '}
-            <span className="bg-gradient-to-r from-indigo-400 via-purple-300 to-pink-400 bg-clip-text text-transparent">
-              Educational Institutions
-            </span>
-          </h1>
-
-          <p className="mt-6 text-base sm:text-lg text-slate-300 max-w-2xl mx-auto font-normal leading-relaxed">
-            EduManage connects Students, Teachers, and Administrators with full-stack role-based workflows for
-            attendance, examination gradebooks, fee invoicing, and academic transcripts.
-          </p>
-
-          {/* 1-Click Interactive Demo Access Cards */}
-          <div className="mt-12 max-w-4xl mx-auto">
-            <div className="text-xs font-bold uppercase tracking-widest text-indigo-400 mb-4 flex items-center justify-center gap-2">
-              <Sparkles className="w-4 h-4" /> Instant 1-Click Demo Evaluation Portals
-            </div>
-
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 text-left">
-              {/* Admin Demo Card */}
-              <div className="bg-slate-800/80 border border-slate-700/80 hover:border-rose-500/50 rounded-2xl p-5 shadow-xl transition-all hover:-translate-y-1 group">
-                <div className="flex items-center justify-between mb-3">
-                  <div className="p-2.5 rounded-xl bg-rose-500/20 text-rose-400 border border-rose-500/30">
-                    <ShieldCheck className="w-5 h-5" />
-                  </div>
-                  <span className="text-[10px] font-bold px-2 py-0.5 rounded bg-rose-500/20 text-rose-300">
-                    Admin
-                  </span>
-                </div>
-                <h3 className="font-bold text-white text-base group-hover:text-rose-300 transition-colors">
-                  Administrator
-                </h3>
-                <p className="text-xs text-slate-400 mt-1 mb-4 leading-relaxed">
-                  Full CRUD on students, teachers, classes, exams, fee billing & statistics.
-                </p>
-                <button
-                  onClick={() => handleQuickDemoLogin('ADMIN')}
-                  disabled={loadingRole !== null}
-                  className="w-full flex items-center justify-center gap-2 py-2.5 px-3 rounded-xl bg-rose-600 hover:bg-rose-500 text-white font-semibold text-xs shadow-lg shadow-rose-600/30 transition-all disabled:opacity-50"
-                >
-                  {loadingRole === 'ADMIN' ? 'Launching...' : 'Launch Admin Demo'}
-                  <ArrowRight className="w-3.5 h-3.5" />
-                </button>
-              </div>
-
-              {/* Teacher Demo Card */}
-              <div className="bg-slate-800/80 border border-slate-700/80 hover:border-emerald-500/50 rounded-2xl p-5 shadow-xl transition-all hover:-translate-y-1 group">
-                <div className="flex items-center justify-between mb-3">
-                  <div className="p-2.5 rounded-xl bg-emerald-500/20 text-emerald-400 border border-emerald-500/30">
-                    <BookOpen className="w-5 h-5" />
-                  </div>
-                  <span className="text-[10px] font-bold px-2 py-0.5 rounded bg-emerald-500/20 text-emerald-300">
-                    Faculty
-                  </span>
-                </div>
-                <h3 className="font-bold text-white text-base group-hover:text-emerald-300 transition-colors">
-                  Teacher Portal
-                </h3>
-                <p className="text-xs text-slate-400 mt-1 mb-4 leading-relaxed">
-                  Assigned class rosters, daily attendance marker, and exam marks grading.
-                </p>
-                <button
-                  onClick={() => handleQuickDemoLogin('TEACHER')}
-                  disabled={loadingRole !== null}
-                  className="w-full flex items-center justify-center gap-2 py-2.5 px-3 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-semibold text-xs shadow-lg shadow-emerald-600/30 transition-all disabled:opacity-50"
-                >
-                  {loadingRole === 'TEACHER' ? 'Launching...' : 'Launch Teacher Demo'}
-                  <ArrowRight className="w-3.5 h-3.5" />
-                </button>
-              </div>
-
-              {/* Student Demo Card */}
-              <div className="bg-slate-800/80 border border-slate-700/80 hover:border-blue-500/50 rounded-2xl p-5 shadow-xl transition-all hover:-translate-y-1 group">
-                <div className="flex items-center justify-between mb-3">
-                  <div className="p-2.5 rounded-xl bg-blue-500/20 text-blue-400 border border-blue-500/30">
-                    <GraduationCap className="w-5 h-5" />
-                  </div>
-                  <span className="text-[10px] font-bold px-2 py-0.5 rounded bg-blue-500/20 text-blue-300">
-                    Student
-                  </span>
-                </div>
-                <h3 className="font-bold text-white text-base group-hover:text-blue-300 transition-colors">
-                  Student Portal
-                </h3>
-                <p className="text-xs text-slate-400 mt-1 mb-4 leading-relaxed">
-                  Personal attendance breakdown, report cards, fee receipts & course history.
-                </p>
-                <button
-                  onClick={() => handleQuickDemoLogin('STUDENT')}
-                  disabled={loadingRole !== null}
-                  className="w-full flex items-center justify-center gap-2 py-2.5 px-3 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-semibold text-xs shadow-lg shadow-blue-600/30 transition-all disabled:opacity-50"
-                >
-                  {loadingRole === 'STUDENT' ? 'Launching...' : 'Launch Student Demo'}
-                  <ArrowRight className="w-3.5 h-3.5" />
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
       </section>
 
-      {/* Feature Modules Grid */}
-      <section className="py-16 bg-slate-950/60 border-t border-slate-800">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center max-w-3xl mx-auto mb-12">
-            <h2 className="text-2xl sm:text-3xl font-extrabold text-white">
-              Complete Educational Administration Suite
+      {/* Chef's Signature Creations Preview */}
+      <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 mb-10">
+          <div>
+            <span className="text-xs font-bold uppercase tracking-widest text-amber-600 bg-amber-50 px-3 py-1 rounded-full border border-amber-200">
+              Chef Alessandro's Highlights
+            </span>
+            <h2 className="text-3xl font-black text-slate-900 tracking-tight mt-2">
+              Featured Gourmet Dishes
             </h2>
-            <p className="text-sm text-slate-400 mt-2">
-              Every workflow engineered with real database relationships, type safety, and responsive UI.
+          </div>
+          <Link
+            href="/menu"
+            className="text-sm font-bold text-amber-600 hover:text-amber-700 flex items-center gap-1.5"
+          >
+            <span>View Full Menu</span>
+            <ArrowRight className="w-4 h-4" />
+          </Link>
+        </div>
+
+        {isLoading ? (
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
+            {[1, 2, 3, 4, 5, 6].map((n) => (
+              <div key={n} className="bg-white rounded-3xl p-4 border border-slate-100 shadow-sm animate-pulse space-y-4">
+                <div className="w-full h-48 bg-slate-200 rounded-2xl" />
+                <div className="h-5 bg-slate-200 rounded w-3/4" />
+                <div className="h-4 bg-slate-100 rounded w-full" />
+              </div>
+            ))}
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
+            {popularItems.map((dish) => (
+              <div
+                key={dish.id}
+                className="bg-white rounded-3xl overflow-hidden border border-slate-100 shadow-sm hover:shadow-xl transition group flex flex-col justify-between"
+              >
+                <div>
+                  <div className="relative h-56 w-full overflow-hidden bg-slate-100">
+                    <img
+                      src={dish.image}
+                      alt={dish.name}
+                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                    />
+                    <div className="absolute top-3 left-3 flex gap-2">
+                      <span className="px-2.5 py-1 rounded-full text-[11px] font-bold bg-slate-950/80 text-white backdrop-blur-md">
+                        {dish.category.name}
+                      </span>
+                      {dish.isVeg && (
+                        <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-600 text-white">
+                          VEG
+                        </span>
+                      )}
+                    </div>
+                    <div className="absolute bottom-3 right-3 bg-white/95 px-3 py-1 rounded-xl text-sm font-black text-slate-900 shadow-md backdrop-blur-md">
+                      {formatCurrency(dish.price)}
+                    </div>
+                  </div>
+
+                  <div className="p-6 space-y-2">
+                    <div className="flex items-center gap-1 text-amber-500 text-xs">
+                      <Star className="w-3.5 h-3.5 fill-amber-500" />
+                      <span className="font-bold text-slate-700">4.9</span>
+                      <span className="text-slate-400">• {dish.prepTimeMinutes} mins prep</span>
+                    </div>
+                    <h3 className="text-base font-bold text-slate-900 group-hover:text-amber-600 transition">
+                      {dish.name}
+                    </h3>
+                    <p className="text-xs text-slate-500 line-clamp-2 leading-relaxed">
+                      {dish.description}
+                    </p>
+                  </div>
+                </div>
+
+                <div className="p-6 pt-0">
+                  <Link
+                    href={`/menu?category=${dish.category.slug}`}
+                    className="w-full py-2.5 px-4 rounded-xl text-xs font-bold bg-slate-50 hover:bg-amber-50 hover:text-amber-700 text-slate-700 border border-slate-200/80 transition flex items-center justify-center gap-2"
+                  >
+                    <span>Order in Digital Menu</span>
+                    <ArrowRight className="w-3.5 h-3.5" />
+                  </Link>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </section>
+
+      {/* Special Offer Banner */}
+      <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="bg-gradient-to-r from-amber-600 via-amber-500 to-orange-500 rounded-3xl p-8 sm:p-12 text-slate-950 shadow-xl flex flex-col md:flex-row items-center justify-between gap-8">
+          <div className="space-y-3 max-w-xl">
+            <div className="inline-flex items-center gap-1.5 bg-slate-950 text-amber-400 text-xs font-bold px-3 py-1 rounded-full">
+              <Percent className="w-3.5 h-3.5" />
+              <span>Limited Time Welcome Offer</span>
+            </div>
+            <h2 className="text-3xl sm:text-4xl font-black tracking-tight leading-tight">
+              Enjoy 10% Off Your First Order with Code <span className="underline decoration-slate-950 font-black">DINE10</span>
+            </h2>
+            <p className="text-sm font-medium text-slate-900/80">
+              Apply code at checkout or use <span className="font-bold">TASTY20</span> for 20% off orders over $50.
             </p>
           </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {/* Student & Teacher Management */}
-            <div className="p-6 rounded-2xl bg-slate-900 border border-slate-800 hover:border-slate-700 transition-all">
-              <div className="w-10 h-10 rounded-xl bg-indigo-500/10 text-indigo-400 flex items-center justify-center mb-4">
-                <Users className="w-5 h-5" />
-              </div>
-              <h3 className="text-base font-bold text-white mb-2">Student & Faculty Directory</h3>
-              <p className="text-xs text-slate-400 leading-relaxed">
-                Complete CRUD for student and teacher profiles, enrollment records, parent contact details, and department allocations.
-              </p>
-            </div>
-
-            {/* Attendance System */}
-            <div className="p-6 rounded-2xl bg-slate-900 border border-slate-800 hover:border-slate-700 transition-all">
-              <div className="w-10 h-10 rounded-xl bg-emerald-500/10 text-emerald-400 flex items-center justify-center mb-4">
-                <CalendarCheck className="w-5 h-5" />
-              </div>
-              <h3 className="text-base font-bold text-white mb-2">Smart Attendance Tracking</h3>
-              <p className="text-xs text-slate-400 leading-relaxed">
-                Daily attendance manager with 1-click batch marking, date filters, leave remarks, and automated attendance percentage metrics.
-              </p>
-            </div>
-
-            {/* Examinations & Gradebook */}
-            <div className="p-6 rounded-2xl bg-slate-900 border border-slate-800 hover:border-slate-700 transition-all">
-              <div className="w-10 h-10 rounded-xl bg-amber-500/10 text-amber-400 flex items-center justify-center mb-4">
-                <Award className="w-5 h-5" />
-              </div>
-              <h3 className="text-base font-bold text-white mb-2">Examinations & Gradebook</h3>
-              <p className="text-xs text-slate-400 leading-relaxed">
-                Schedule exams, enter subject marks, auto-calculate letter grades (A+, A, B...) and percentages with official report card generation.
-              </p>
-            </div>
-
-            {/* Fee Billing */}
-            <div className="p-6 rounded-2xl bg-slate-900 border border-slate-800 hover:border-slate-700 transition-all">
-              <div className="w-10 h-10 rounded-xl bg-purple-500/10 text-purple-400 flex items-center justify-center mb-4">
-                <CreditCard className="w-5 h-5" />
-              </div>
-              <h3 className="text-base font-bold text-white mb-2">Fee Billing & Invoicing</h3>
-              <p className="text-xs text-slate-400 leading-relaxed">
-                Generate student invoices, record payments (Paid, Partial, Pending, Overdue), track receipts, and view institutional revenue breakdown.
-              </p>
-            </div>
-
-            {/* Academic Records */}
-            <div className="p-6 rounded-2xl bg-slate-900 border border-slate-800 hover:border-slate-700 transition-all">
-              <div className="w-10 h-10 rounded-xl bg-cyan-500/10 text-cyan-400 flex items-center justify-center mb-4">
-                <FileBadge className="w-5 h-5" />
-              </div>
-              <h3 className="text-base font-bold text-white mb-2">Transcripts & GPA Records</h3>
-              <p className="text-xs text-slate-400 leading-relaxed">
-                Term-wise GPA calculation, class rankings, student promotion status, and downloadable transcript summaries.
-              </p>
-            </div>
-
-            {/* Role-based Security */}
-            <div className="p-6 rounded-2xl bg-slate-900 border border-slate-800 hover:border-slate-700 transition-all">
-              <div className="w-10 h-10 rounded-xl bg-rose-500/10 text-rose-400 flex items-center justify-center mb-4">
-                <Lock className="w-5 h-5" />
-              </div>
-              <h3 className="text-base font-bold text-white mb-2">Role-Based Access (RBAC)</h3>
-              <p className="text-xs text-slate-400 leading-relaxed">
-                Secure JWT cookie authentication, bcrypt hashing, Next.js middleware guards preventing unauthorized cross-portal access.
-              </p>
-            </div>
-          </div>
+          <Link
+            href="/menu"
+            className="px-8 py-4 rounded-2xl text-sm font-black bg-slate-950 text-white hover:bg-slate-900 transition shadow-xl shrink-0 flex items-center gap-2"
+          >
+            <span>Claim Discount Now</span>
+            <ArrowRight className="w-4 h-4" />
+          </Link>
         </div>
       </section>
-
-      {/* Tech Stack Summary */}
-      <section className="py-12 border-t border-slate-800 bg-slate-900">
-        <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-          <p className="text-xs font-bold uppercase tracking-wider text-slate-400 mb-6">
-            Engineered with Modern Production Tech Stack
-          </p>
-          <div className="flex flex-wrap items-center justify-center gap-6 sm:gap-10 text-slate-300 text-sm font-semibold">
-            <span className="flex items-center gap-2 bg-slate-800/80 px-4 py-2 rounded-xl border border-slate-700">
-              Next.js 14 App Router
-            </span>
-            <span className="flex items-center gap-2 bg-slate-800/80 px-4 py-2 rounded-xl border border-slate-700">
-              PostgreSQL & Prisma ORM
-            </span>
-            <span className="flex items-center gap-2 bg-slate-800/80 px-4 py-2 rounded-xl border border-slate-700">
-              TypeScript (Strict)
-            </span>
-            <span className="flex items-center gap-2 bg-slate-800/80 px-4 py-2 rounded-xl border border-slate-700">
-              Tailwind CSS & Recharts
-            </span>
-            <span className="flex items-center gap-2 bg-slate-800/80 px-4 py-2 rounded-xl border border-slate-700">
-              JWT & RBAC Middleware
-            </span>
-          </div>
-        </div>
-      </section>
-
-      {/* Footer */}
-      <footer className="py-6 border-t border-slate-800 text-center text-xs text-slate-500">
-        <p>EduManage • Built for CodSoft Full Stack Web Development Internship (Task 1)</p>
-      </footer>
     </div>
   );
 }

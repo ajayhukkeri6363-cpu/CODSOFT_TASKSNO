@@ -1,20 +1,9 @@
 import jwt from 'jsonwebtoken';
 import { cookies } from 'next/headers';
-import prisma from './prisma';
+import { Role, UserSessionPayload } from './types';
 
-const JWT_SECRET = process.env.JWT_SECRET || 'edumanage_jwt_super_secret_fallback_key';
-export const TOKEN_COOKIE_NAME = 'edumanage_session_token';
-
-export interface UserSessionPayload {
-  id: string;
-  email: string;
-  role: 'ADMIN' | 'TEACHER' | 'STUDENT';
-  name: string;
-  avatar?: string | null;
-  teacherId?: string | null;
-  studentId?: string | null;
-  classId?: string | null;
-}
+const JWT_SECRET = process.env.JWT_SECRET || 'dinedesk_jwt_super_secret_fallback_key';
+export const TOKEN_COOKIE_NAME = 'dinedesk_session_token';
 
 export function signToken(payload: UserSessionPayload): string {
   return jwt.sign(payload, JWT_SECRET, { expiresIn: '7d' });
@@ -39,7 +28,7 @@ export async function getCurrentUser(): Promise<UserSessionPayload | null> {
   return payload;
 }
 
-export async function requireAuth(allowedRoles?: Array<'ADMIN' | 'TEACHER' | 'STUDENT'>) {
+export async function requireAuth(allowedRoles?: Role[]) {
   const user = await getCurrentUser();
   if (!user) {
     return null;

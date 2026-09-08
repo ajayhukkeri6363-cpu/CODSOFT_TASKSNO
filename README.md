@@ -1,95 +1,108 @@
-# 🎓 EduManage — Student Management System
+# 🍽️ DineDesk — Restaurant Ordering & Table Management Platform
 
 [![CodSoft Internship](https://img.shields.io/badge/CodSoft-Full_Stack_Web_Development-blue.svg)](https://www.codsoft.in)
-[![Task](https://img.shields.io/badge/Task-Task_1_Student_Management_System-indigo.svg)](#)
+[![Task](https://img.shields.io/badge/Task-Task_2_Restaurant_Ordering_Platform-orange.svg)](#)
 [![Next.js](https://img.shields.io/badge/Next.js-14_App_Router-black.svg)](https://nextjs.org/)
 [![TypeScript](https://img.shields.io/badge/TypeScript-Strict_Mode-3178C6.svg)](https://www.typescriptlang.org/)
-[![Prisma ORM](https://img.shields.io/badge/Prisma-Relational_ORM-2D3748.svg)](https://www.prisma.io/)
-[![Tailwind CSS](https://img.shields.io/badge/Tailwind_CSS-Modern_UI-38B2AC.svg)](https://tailwindcss.com/)
+[![Prisma ORM](https://img.shields.io/badge/Prisma-PostgreSQL_%2F_SQLite-2D3748.svg)](https://www.prisma.io/)
+[![Tailwind CSS](https://img.shields.io/badge/Tailwind_CSS-Gourmet_UI-38B2AC.svg)](https://tailwindcss.com/)
 
-**EduManage** is a professional, modern, fully functional full-stack education management platform designed to digitize academic administration. It provides dedicated, role-protected portals for **Administrators**, **Teachers**, and **Students** with complete CRUD operations, attendance tracking, examination gradebooks, fee billing, and cumulative academic transcripts.
+**DineDesk** is a modern, full-stack restaurant ordering, table management, and kitchen operations platform built for high-end dining and delivery. It connects **Customers**, **Kitchen Staff**, and **Restaurant Administrators** into a unified real-time workflow.
 
-Built as part of the **CodSoft Full Stack Web Development Internship (Task 1)**.
+Built as part of the **CodSoft Full Stack Web Development Internship (Task 2)**.
 
 ---
 
 ## 🌟 Comprehensive Features by Role
 
-### 👑 1. Administrator Portal (`/admin`)
-- **Institution Analytics**: Real-time KPI summary (Total Students, Teachers, Classes, Attendance Rate %, Fees Invoiced vs Collected) with interactive Recharts trends and grade distributions.
-- **Student Management (CRUD)**: Enroll students, assign roll/admission numbers, edit profiles, delete with cascading safety, filter by class/gender, and view comprehensive 360° student records.
-- **Faculty Directory (CRUD)**: Manage teachers, assign qualifications, departments, and subject curriculums.
-- **Classes & Cohorts**: Configure grade levels, room numbers, student capacities, and assign dedicated Class Teachers.
-- **Smart Attendance Manager**: Roll call interface with date pickers, batch 1-click *"Mark All Present"* or *"Mark All Absent"*, and attendance percentage indicators.
-- **Examinations & Terms**: Schedule midterm and final examination sessions across academic terms.
-- **Gradebook & Scorecards**: Input marks out of 100, auto-calculate letter grades ($A+, A, B, C, D, F$) and percentages in real time.
-- **Fee Billing & Invoicing**: Generate tuition vouchers, track partial/overdue/paid balances, and record payments with receipts.
-- **Academic Transcripts & GPA**: Calculate cumulative GPAs, rank students, and manage promotion statuses ($PROMOTED, DETAINED$).
+### 🍕 1. Customer Portal (`/`, `/menu`, `/cart`, `/reservations`, `/orders`)
+- **Gourmet Digital Menu**: Categorized dish catalog (*Artisanal Starters, Stone-Oven Pizzas, Handcrafted Pastas, Prime Grill, Decadent Desserts, Signature Beverages*).
+- **Interactive Search & Dietary Filters**: Real-time filters for Vegetarian (`VEG`), Gluten-Free (`GF`), Spicy (`SPICY`), and Chef's Pick (`POPULAR`).
+- **Dish Detail Modal**: Deep dive into culinary preparation, complete ingredient lists, allergen notices, calorie counts, and special cooking instructions.
+- **Dynamic Cart & Checkout**:
+  - Service selection: **Dine-In** (with live table picker), **Takeaway** (counter pickup), or **Delivery** (address input).
+  - Quantity steppers and special cooking instructions.
+  - Promo code discounts (`DINE10` for 10% off, `TASTY20` for 20% off).
+  - Automatic computation of subtotal, restaurant tax ($8.25\%$), delivery fee, and grand total.
+- **Table Reservation Engine**: Select date, time slot, party size (1–12 guests), and seating zone (*Main Hall, Window View, Garden Patio, VIP Lounge, Rooftop*) with real-time double-booking prevention.
+- **Live Order Tracking (`/orders/[id]`)**: 5-stage visual progress tracker (`PLACED` ➔ `CONFIRMED` ➔ `PREPARING` ➔ `READY` ➔ `COMPLETED`) with estimated prep timers and printable receipts.
+- **Customer Profile & History**: View past orders, reorder dishes in 1 click, and track lifetime culinary rewards.
 
-### 👨‍🏫 2. Teacher / Faculty Portal (`/teacher`)
-- **Faculty Dashboard**: Overview of assigned classes, total students, and quick action shortcuts.
-- **Class Rosters**: View enrolled learners in assigned classes with parent contact numbers.
-- **Attendance Marking**: Take daily attendance for assigned cohorts with status toggles and excuse notes.
-- **Gradebook Entry**: Record exam marks for taught subjects with instant auto-grading.
+---
 
-### 🎓 3. Student Portal (`/student`)
-- **Personal Dashboard**: Attendance rate gauge, cumulative GPA, fee dues alert, and announcements.
-- **Student 360° Profile**: Personal bio, parent guardian contacts, class teacher, and admission details.
-- **Attendance Calendar**: Breakdown of attended sessions, excused leaves, and historical presence logs.
-- **Examination Report Cards**: Digital scorecards with subject marks, letter grades, and faculty feedback.
-- **Fee Invoices & Payments**: View fee dues, download invoice vouchers, and simulate online payments.
-- **Academic Overview**: Enrolled curriculum subjects, course syllabus codes, and term GPA transcripts.
+### 🍳 2. Kitchen & Staff Portal (`/staff`, `/staff/tables`, `/staff/reservations`)
+- **Kitchen Display System (KDS)**: Live 3-column Kanban board for incoming tickets (`PLACED`), cooking queue (`PREPARING`), and plating pass (`READY`).
+- **1-Click Stage Transitions**: Instantly accept tickets, move to cooking, mark food ready, and dispatch completed orders.
+- **Dining Room Floor Plan (`/staff/tables`)**: Visual table map with live occupancy indicators (`AVAILABLE`, `OCCUPIED`, `RESERVED`, `CLEANING`) and 1-click state toggles.
+- **Hostess & Maître D' Stand (`/staff/reservations`)**: View scheduled parties for today, check in arriving diners, seat guests at tables, and manage cancellations.
+
+---
+
+### 📊 3. Administrator Control Center (`/admin`, `/admin/menu`, `/admin/categories`, `/admin/tables`, `/admin/orders`, `/admin/customers`, `/admin/payments`)
+- **Executive Analytics Dashboard**: Gross sales revenue, today's sales, average check size, table occupancy percentage, top-selling dishes by volume, and channel breakdown via interactive **Recharts** visualizations.
+- **Menu Management CRUD**: Create, edit, and delete dishes, adjust pricing, upload imagery, and toggle live **Available / Sold Out** status.
+- **Menu Category Manager**: Reorder courses, update descriptions, and manage culinary taxonomy.
+- **Floor Architecture & Tables**: Configure restaurant tables, guest capacities, and floor zones.
+- **Master Reservation Ledger**: Audit all table bookings, filter by status and date, and manage VIP allocations.
+- **Master Order Ledger**: Real-time log of all customer orders across channels with itemized receipt inspector modal.
+- **Customer Directory**: Guest relationship management tracking lifetime spend, visit frequency, and loyalty activity.
+- **Financial Payment Ledger**: Transaction settlement logs with payment methods (`CARD`, `CASH`, `ONLINE`, `UPI`) and transaction IDs.
 
 ---
 
 ## 🛠️ Tech Stack & Architecture
 
-- **Frontend & Backend Framework**: [Next.js 14](https://nextjs.org/) (App Router, React, Server Components, Route Handlers)
+- **Frontend & Full-Stack Framework**: [Next.js 14](https://nextjs.org/) (App Router, Server Components, Route Handlers)
 - **Language**: [TypeScript](https://www.typescriptlang.org/) (Strict End-to-End Type Safety)
-- **Database & ORM**: [Prisma ORM](https://www.prisma.io/) (Configured with SQLite for instant zero-config evaluation; fully compatible with PostgreSQL)
+- **Database & ORM**: [Prisma ORM](https://www.prisma.io/) with PostgreSQL & SQLite compatibility
 - **Styling & UI**: [Tailwind CSS](https://tailwindcss.com/), [Lucide React Icons](https://lucide.dev/), and [Recharts](https://recharts.org/)
 - **Authentication & Security**:
-  - Secure JWT session cookie authentication with bcrypt password hashing
-  - Next.js Edge Middleware route guards enforcing Role-Based Access Control (RBAC)
-  - Strict input validation and sanitization
+  - Secure JWT session cookie authentication with `bcryptjs` password hashing
+  - Next.js Edge Middleware route guards enforcing Role-Based Access Control (`CUSTOMER`, `STAFF`, `ADMIN`)
+  - Server-side price and order validation to prevent tampering
 
 ---
 
-## 🗄️ Relational Database Architecture
+## 🗄️ Relational Database Schema
 
 ```mermaid
 erDiagram
-    USER ||--o| TEACHER : "has profile"
-    USER ||--o| STUDENT : "has profile"
-    USER ||--o{ ANNOUNCEMENT : "authors"
-    TEACHER ||--o{ CLASS : "manages as class teacher"
-    TEACHER ||--o{ SUBJECT : "teaches"
-    CLASS ||--o{ STUDENT : "enrolled in"
-    CLASS ||--o{ SUBJECT : "curriculum"
-    CLASS ||--o{ ATTENDANCE : "recorded for"
-    STUDENT ||--o{ ATTENDANCE : "attendance logs"
-    STUDENT ||--o{ RESULT : "exam scores"
-    STUDENT ||--o{ FEE : "invoices"
-    STUDENT ||--o{ ACADEMIC_RECORD : "transcripts"
-    EXAMINATION ||--o{ RESULT : "grades"
-    SUBJECT ||--o{ RESULT : "scored under"
+    USER ||--o{ ORDER : "places"
+    USER ||--o{ RESERVATION : "books"
+    MENU_CATEGORY ||--o{ MENU_ITEM : "contains"
+    RESTAURANT_TABLE ||--o{ RESERVATION : "assigned to"
+    RESTAURANT_TABLE ||--o{ ORDER : "seated at"
+    ORDER ||--o{ ORDER_ITEM : "includes"
+    MENU_ITEM ||--o{ ORDER_ITEM : "ordered as"
+    ORDER ||--o| PAYMENT : "settled with"
+```
+
+---
+
+## 🔄 Order Lifecycle Progression
+
+```mermaid
+graph LR
+    P[PLACED] -->|Kitchen Accepts| C[CONFIRMED]
+    C -->|Chef Starts Cooking| PR[PREPARING]
+    PR -->|Plated on Pass| R[READY]
+    R -->|Served / Delivered| CP[COMPLETED]
+    P -->|Rejected / Cancelled| CN[CANCELLED]
 ```
 
 ---
 
 ## 🔑 Pre-Seeded Demo Credentials
 
-For quick evaluation, use the credentials below or click any of the **Instant 1-Click Demo Buttons** on the landing page or top navbar:
+Use the credentials below or click the **1-Click Demo Switcher** in the top navigation bar:
 
-| Role | Email | Password | Access Level |
+| Role | Email | Password | Access Portal |
 | :--- | :--- | :--- | :--- |
-| **Administrator** | `admin@edumanage.com` | `admin123` | Full institutional CRUD & configuration |
-| **Teacher** | `sarah.jenkins@edumanage.com` | `teacher123` | Class rosters, attendance & grading |
-| **Teacher** | `robert.vance@edumanage.com` | `teacher123` | Humanities subjects & classes |
-| **Teacher** | `david.chen@edumanage.com` | `teacher123` | Physical sciences & labs |
-| **Student** | `alex.morgan@edumanage.com` | `student123` | Grade 10-A student profile & scores |
-| **Student** | `emma.watson@edumanage.com` | `student123` | Top-ranking student profile |
-| **Student** | `liam.smith@edumanage.com` | `student123` | Student with overdue fee record |
+| **Admin / General Manager** | `admin@dinedesk.com` | `admin123` | Full control center, analytics, menu CRUD (`/admin`) |
+| **Kitchen Staff / Head Chef** | `chef.marco@dinedesk.com` | `staff123` | Kitchen KDS, table floor plan, guest check-in (`/staff`) |
+| **Floor Lead** | `waiter.lucas@dinedesk.com` | `staff123` | Table seating and reservation reception (`/staff`) |
+| **Customer (Sophia Miller)** | `sophia.miller@example.com` | `customer123` | Digital menu, cart, reservations, tracking (`/menu`) |
+| **Customer (Ethan Hunt)** | `ethan.hunt@example.com` | `customer123` | Customer portal and order history (`/orders`) |
 
 ---
 
@@ -97,7 +110,7 @@ For quick evaluation, use the credentials below or click any of the **Instant 1-
 
 ### Prerequisites
 - [Node.js](https://nodejs.org/) (v18.17.0 or higher)
-- npm or yarn or pnpm
+- npm or pnpm or yarn
 
 ### 1. Clone the Repository
 ```bash
@@ -111,24 +124,24 @@ npm install
 ```
 
 ### 3. Setup Environment Variables
-Copy the `.env.example` file to `.env`:
+Copy the environment template:
 ```bash
 cp .env.example .env
 ```
-*(A default SQLite `DATABASE_URL="file:./dev.db"` is pre-configured for zero-setup running).*
+*(Default SQLite `DATABASE_URL="file:./dev.db"` is pre-configured for zero-setup local running).*
 
 ### 4. Database Setup & Seed
-Run Prisma database sync and populate with realistic sample data:
+Run Prisma migration and populate complete gourmet seed data:
 ```bash
 npm run db:setup
 ```
-*Or execute individually:*
+*Or run individually:*
 ```bash
-npm run prisma:migrate
-npm run prisma:seed
+npx prisma db push
+node prisma/seed.js
 ```
 
-### 5. Start the Development Server
+### 5. Start Development Server
 ```bash
 npm run dev
 ```
@@ -143,30 +156,19 @@ npm test
 
 ## 🌐 Deploying to Vercel & Production PostgreSQL
 
-EduManage is fully optimized for **Vercel** and managed cloud PostgreSQL providers (such as [Neon](https://neon.tech), [Supabase](https://supabase.com), or [Vercel Postgres](https://vercel.com/docs/storage/vercel-postgres)).
+DineDesk is fully optimized for **Vercel** and managed cloud PostgreSQL databases (such as [Neon](https://neon.tech), [Supabase](https://supabase.com), or [Vercel Postgres](https://vercel.com/docs/storage/vercel-postgres)).
 
-### 1. Provision a Cloud PostgreSQL Database
-1. Create a free account at [Neon](https://neon.tech) or [Supabase](https://supabase.com).
-2. Create a new PostgreSQL database and copy the **Connection String** with SSL mode enabled (e.g. `postgresql://user:password@ep-xyz.aws.neon.tech/neondb?sslmode=require`).
-
-### 2. Push Database Schema & Seed Data Remotely
-From your local terminal, set your connection string and initialize the database:
-```bash
-# Push schema and create all PostgreSQL tables
-DATABASE_URL="<YOUR_POSTGRESQL_CONNECTION_STRING>" npx prisma db push
-
-# Seed initial admin, teacher, student, attendance, exam, and fee data
-DATABASE_URL="<YOUR_POSTGRESQL_CONNECTION_STRING>" node prisma/seed.js
-```
-
-### 3. Deploy to Vercel
-1. Push your latest code to your GitHub repository.
-2. In the [Vercel Dashboard](https://vercel.com), click **"Add New"** > **"Project"** and import your GitHub repository.
-3. In the **Environment Variables** section, configure the following:
-   * **`DATABASE_URL`**: `<Your PostgreSQL Connection String>`
-   * **`JWT_SECRET`**: `<A random 32+ character secret string>`
-4. Click **Deploy**. Vercel will automatically run `npm run build` and launch your production platform!
-
+1. Provision a free PostgreSQL database on [Neon](https://neon.tech) or [Supabase](https://supabase.com).
+2. Set `provider = "postgresql"` in `prisma/schema.prisma`.
+3. Push schema and seed remotely:
+   ```bash
+   DATABASE_URL="postgresql://user:password@host/dbname?sslmode=require" npx prisma db push
+   DATABASE_URL="postgresql://user:password@host/dbname?sslmode=require" node prisma/seed.js
+   ```
+4. In the **Vercel Dashboard**, add environment variables:
+   - `DATABASE_URL` = `<Your PostgreSQL connection string>`
+   - `JWT_SECRET` = `<A random 32+ character string>`
+5. Deploy repository.
 
 ---
 
@@ -175,82 +177,55 @@ DATABASE_URL="<YOUR_POSTGRESQL_CONNECTION_STRING>" node prisma/seed.js
 ```
 CODSOFT_TASKSNO/
 ├── prisma/
-│   ├── schema.prisma          # Complete relational database models
-│   └── seed.js                # Realistic seed script (Users, Classes, Exams, Fees)
+│   ├── schema.prisma          # Relational database models (8 models)
+│   └── seed.js                # Gourmet seed data (Users, Categories, Dishes, Tables, Orders)
 ├── src/
 │   ├── app/
-│   │   ├── layout.tsx         # Root layout with ToastProvider
-│   │   ├── page.tsx           # Marketing landing page with 1-click demo logins
-│   │   ├── login/page.tsx     # Role-based login page with autofill helpers
-│   │   ├── admin/             # Admin Portal (Dashboard + 8 Management pages)
-│   │   │   ├── page.tsx       # Institutional KPI & analytics charts
-│   │   │   ├── students/      # Student CRUD & 360° Profile view
-│   │   │   ├── teachers/      # Faculty CRUD & subject allocations
-│   │   │   ├── classes/       # Class cohorts & curriculum manager
-│   │   │   ├── attendance/    # Institution-wide roll call attendance
-│   │   │   ├── examinations/  # Examination scheduling & terms
-│   │   │   ├── results/       # Gradebook & letter grade calculator
-│   │   │   ├── fees/          # Tuition invoicing & payment vouchers
-│   │   │   └── academic-records/ # Cumulative GPA & transcripts
-│   │   ├── teacher/           # Faculty Portal (Dashboard, Classes, Attendance, Gradebook)
-│   │   ├── student/           # Student Portal (Profile, Attendance, Results, Fees, Academics)
-│   │   └── api/               # Next.js API Routes (RESTful CRUD handlers)
-│   ├── components/            # Reusable UI components (Sidebar, Header, Modals, StatsCard, Toast)
-│   ├── lib/                   # Utility helpers (Prisma client, JWT auth, formatting, types)
-│   └── middleware.ts          # Next.js Edge Middleware for Role-Based Access Control
-├── .env.example               # Safe environment variable template
+│   │   ├── layout.tsx         # Root layout with CartProvider & ToastProvider
+│   │   ├── page.tsx           # Marketing landing page with 1-click demo launches
+│   │   ├── menu/page.tsx      # Gourmet digital menu with category tabs & dietary filters
+│   │   ├── cart/page.tsx      # Cart & checkout (Dine-in, Takeaway, Delivery + coupons)
+│   │   ├── reservations/      # Table reservation engine with collision checks
+│   │   ├── orders/            # Order history and live 5-stage tracker (/orders/[id])
+│   │   ├── profile/page.tsx   # Customer profile & lifetime spend metrics
+│   │   ├── login/page.tsx     # Sign in with demo account autofill pills
+│   │   ├── register/page.tsx  # Customer registration
+│   │   ├── staff/             # Kitchen Display System (KDS), Table Occupancy, Guest Check-In
+│   │   ├── admin/             # Executive analytics, Menu CRUD, Tables, Orders, Payments
+│   │   └── api/               # 18 RESTful API routes with JWT auth & RBAC
+│   ├── components/            # Reusable UI widgets (Header, Footer, Sidebar, Modals, StatsCard, Toast)
+│   ├── context/               # CartContext for client state and coupon calculations
+│   ├── lib/                   # Auth helpers, Prisma singleton, TypeScript types, utilities
+│   └── middleware.ts          # Edge Middleware for Role-Based Access Control
+├── .env.example               # Environment variables template
 ├── .gitignore                 # Standard Next.js/Prisma exclusion rules
 ├── package.json
-├── test-suite.js              # Automated integration test runner
+├── test-suite.js              # Automated integration test runner (30 test cases)
 └── README.md
 ```
 
 ---
 
-## 🔌 API Endpoints Reference
-
-| Method | Endpoint | Description | Access |
-| :--- | :--- | :--- | :--- |
-| `POST` | `/api/auth/login` | Session login with email & password | Public |
-| `POST` | `/api/auth/logout` | Clear session cookie | Authenticated |
-| `POST` | `/api/auth/demo-switch`| 1-click evaluation account switcher | Public |
-| `GET` | `/api/auth/me` | Fetch active user session | Authenticated |
-| `GET` | `/api/stats` | Role-specific dashboard analytics | Authenticated |
-| `GET/POST`| `/api/students` | List students with filters / Enroll new student | Admin / Staff |
-| `GET/PUT/DEL`| `/api/students/:id` | View 360° profile, update details, or delete | Admin / Staff |
-| `GET/POST`| `/api/teachers` | List faculty / Add new teacher | Admin |
-| `GET/PUT/DEL`| `/api/teachers/:id` | View teacher, update details, or delete | Admin |
-| `GET/POST`| `/api/classes` | List classes / Create new grade cohort | Admin |
-| `GET/POST`| `/api/subjects` | Manage class curriculum subjects | Admin |
-| `GET/POST`| `/api/attendance`| Get class attendance / Batch mark attendance | Admin / Teacher |
-| `GET/POST`| `/api/examinations`| List exams / Schedule new examination | Admin |
-| `GET/POST`| `/api/results` | Fetch results / Record student exam marks | Admin / Teacher |
-| `GET/POST`| `/api/fees` | List invoices with status filter / Create fee | Admin / Student |
-| `PUT/DEL` | `/api/fees/:id` | Record payment settlement / Delete invoice | Admin |
-| `GET/POST`| `/api/academic-records`| Fetch GPA transcripts / Add academic record | Admin / Student |
-
----
-
 ## 🔒 Security Compliance
 
-- **No Hardcoded Secrets**: Secrets and database connection strings are managed strictly via environment variables (`.env`).
-- **Protected Credentials**: Passwords hashed with `bcryptjs` (salt rounds: 10).
-- **Session Tokens**: HTTP-Only JWT cookies with strict expiration and SameSite policy.
-- **Role Enforcement**: Next.js edge middleware prevents unauthorized access between `/admin`, `/teacher`, and `/student` routes.
-- **Clean Git Repository**: `.gitignore` strictly ignores local `.env` files, node modules, and SQLite database binaries.
+- **No Exposed Secrets**: All connection strings and private keys are managed via environment variables.
+- **Hashed Passwords**: Passwords encrypted using `bcryptjs` with 10 salt rounds.
+- **Edge RBAC Guards**: Next.js Edge Middleware prevents unauthorized cross-role access.
+- **Order Price Integrity**: Server-side price calculation prevents client-side price tampering.
+- **Clean Git Repository**: `.env`, build artifacts, and database binaries are strictly ignored in `.gitignore`.
 
 ---
 
 ## 🔮 Future Improvements
 
-- **Parent Portal**: Dedicated mobile view for parents to track live attendance notifications and report cards.
-- **SMS & Email Alerts**: Webhook integrations for automatic fee due reminders and attendance notices.
-- **AI Student Assistant**: Integrated AI tutor for personalized homework support and syllabus question answering.
-- **Multi-Branch Institution Hierarchy**: Support for multiple school campuses under one administrative domain.
+- **Real-Time WebSockets**: Instant push notifications to kitchen KDS tickets without polling.
+- **QR Code Table Ordering**: Scan table QR code to automatically bind dining session to table number.
+- **Stripe & Apple Pay Integration**: Full direct gateway processing for live credit cards.
+- **SMS Order Updates**: Twilio integration for automated text notifications on order preparation.
 
 ---
 
 ## 📄 License & Attribution
 
-Developed for the **CodSoft Full Stack Web Development Internship (Task 1)** by **Ajay**.
+Developed for the **CodSoft Full Stack Web Development Internship (Task 2)** by **Ajay**.  
 All rights reserved.

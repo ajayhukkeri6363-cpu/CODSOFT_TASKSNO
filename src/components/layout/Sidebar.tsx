@@ -4,165 +4,89 @@ import React from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import {
-  LayoutDashboard,
-  Users,
-  UserCheck,
-  School,
+  BarChart3,
+  UtensilsCrossed,
+  FolderTree,
+  LayoutGrid,
   CalendarCheck,
-  FileText,
-  Award,
+  ShoppingBag,
+  Users,
   CreditCard,
-  FileBadge,
-  User,
-  BookOpen,
-  X,
-  GraduationCap,
+  Flame,
+  ArrowLeft,
 } from 'lucide-react';
-import { Role } from '@/lib/types';
 
 interface SidebarProps {
-  role?: Role;
-  isOpen?: boolean;
-  onClose?: () => void;
+  role: 'ADMIN' | 'STAFF';
 }
 
-export const Sidebar: React.FC<SidebarProps> = ({ role = 'ADMIN', isOpen = false, onClose }) => {
+export const Sidebar: React.FC<SidebarProps> = ({ role }) => {
   const pathname = usePathname();
 
-  const adminNav = [
-    { label: 'Dashboard', href: '/admin', icon: LayoutDashboard },
-    { label: 'Students', href: '/admin/students', icon: Users },
-    { label: 'Teachers', href: '/admin/teachers', icon: UserCheck },
-    { label: 'Classes & Courses', href: '/admin/classes', icon: School },
-    { label: 'Attendance', href: '/admin/attendance', icon: CalendarCheck },
-    { label: 'Examinations', href: '/admin/examinations', icon: FileText },
-    { label: 'Exam Results', href: '/admin/results', icon: Award },
-    { label: 'Fees & Invoices', href: '/admin/fees', icon: CreditCard },
-    { label: 'Academic Records', href: '/admin/academic-records', icon: FileBadge },
+  const adminLinks = [
+    { href: '/admin', label: 'Dashboard & Analytics', icon: BarChart3 },
+    { href: '/admin/menu', label: 'Menu Management', icon: UtensilsCrossed },
+    { href: '/admin/categories', label: 'Categories', icon: FolderTree },
+    { href: '/admin/tables', label: 'Floor & Tables', icon: LayoutGrid },
+    { href: '/admin/reservations', label: 'Reservations', icon: CalendarCheck },
+    { href: '/admin/orders', label: 'Master Orders', icon: ShoppingBag },
+    { href: '/admin/customers', label: 'Customer Directory', icon: Users },
+    { href: '/admin/payments', label: 'Payment Ledger', icon: CreditCard },
   ];
 
-  const teacherNav = [
-    { label: 'Dashboard', href: '/teacher', icon: LayoutDashboard },
-    { label: 'My Classes', href: '/teacher/classes', icon: School },
-    { label: 'Students Roster', href: '/teacher/students', icon: Users },
-    { label: 'Attendance Entry', href: '/teacher/attendance', icon: CalendarCheck },
-    { label: 'Gradebook & Marks', href: '/teacher/results', icon: Award },
+  const staffLinks = [
+    { href: '/staff', label: 'Kitchen Display (KDS)', icon: Flame },
+    { href: '/staff/tables', label: 'Table Occupancy', icon: LayoutGrid },
+    { href: '/staff/reservations', label: 'Guest Check-In', icon: CalendarCheck },
   ];
 
-  const studentNav = [
-    { label: 'Dashboard', href: '/student', icon: LayoutDashboard },
-    { label: 'My Profile', href: '/student/profile', icon: User },
-    { label: 'My Attendance', href: '/student/attendance', icon: CalendarCheck },
-    { label: 'Exam Results', href: '/student/results', icon: Award },
-    { label: 'Fee Dues & Receipts', href: '/student/fees', icon: CreditCard },
-    { label: 'Academic Overview', href: '/student/academics', icon: BookOpen },
-  ];
-
-  const navItems = role === 'ADMIN' ? adminNav : role === 'TEACHER' ? teacherNav : studentNav;
-
-  const getPortalInfo = () => {
-    switch (role) {
-      case 'ADMIN':
-        return { label: 'Admin Workspace', tag: 'Full Control', badge: 'bg-rose-100 text-rose-800' };
-      case 'TEACHER':
-        return { label: 'Teacher Workspace', tag: 'Faculty', badge: 'bg-emerald-100 text-emerald-800' };
-      case 'STUDENT':
-        return { label: 'Student Workspace', tag: 'Learner', badge: 'bg-blue-100 text-blue-800' };
-      default:
-        return { label: 'EduManage', tag: 'Portal', badge: 'bg-indigo-100 text-indigo-800' };
-    }
-  };
-
-  const portal = getPortalInfo();
+  const links = role === 'ADMIN' ? adminLinks : staffLinks;
 
   return (
-    <>
-      {/* Mobile overlay */}
-      {isOpen && (
-        <div
-          className="fixed inset-0 z-40 bg-slate-950/60 backdrop-blur-sm lg:hidden transition-opacity"
-          onClick={onClose}
-        />
-      )}
-
-      {/* Sidebar container */}
-      <aside
-        className={`fixed top-0 bottom-0 left-0 z-40 flex w-64 flex-col border-r border-slate-200 bg-white shadow-lg lg:shadow-none transition-transform duration-300 ease-in-out lg:translate-x-0 ${
-          isOpen ? 'translate-x-0' : '-translate-x-full'
-        }`}
-      >
-        {/* Brand header */}
-        <div className="flex h-16 items-center justify-between px-5 border-b border-slate-100">
-          <Link href="/" className="flex items-center gap-2.5">
-            <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-tr from-indigo-600 to-violet-600 text-white shadow-md shadow-indigo-500/20">
-              <GraduationCap className="h-5 w-5" />
-            </div>
-            <div>
-              <span className="font-extrabold text-slate-900 tracking-tight text-lg">EduManage</span>
-              <span className="text-[10px] block text-indigo-600 font-semibold tracking-wide uppercase -mt-1">
-                SIS Platform
-              </span>
-            </div>
-          </Link>
-          {onClose && (
-            <button
-              onClick={onClose}
-              className="lg:hidden p-1.5 text-slate-400 hover:text-slate-700 hover:bg-slate-100 rounded-lg"
-            >
-              <X className="w-5 h-5" />
-            </button>
-          )}
-        </div>
-
-        {/* Portal status banner */}
-        <div className="px-4 py-3 mx-3 mt-3 rounded-xl bg-slate-50 border border-slate-100 flex items-center justify-between">
+    <aside className="w-64 bg-slate-900 text-slate-300 min-h-[calc(100vh-5rem)] p-4 flex flex-col justify-between border-r border-slate-800">
+      <div className="space-y-6">
+        {/* Role Banner */}
+        <div className="px-3 py-2 rounded-xl bg-slate-800/80 border border-slate-700/60 flex items-center justify-between">
           <div>
-            <p className="text-xs font-bold text-slate-800">{portal.label}</p>
-            <p className="text-[10px] text-slate-500">Academic Year 2024-25</p>
+            <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Control Panel</p>
+            <p className="text-sm font-black text-amber-400">{role === 'ADMIN' ? 'Admin Suite' : 'Kitchen & Staff'}</p>
           </div>
-          <span className={`text-[10px] font-bold px-2 py-0.5 rounded-md uppercase tracking-wider ${portal.badge}`}>
-            {portal.tag}
-          </span>
+          <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse"></span>
         </div>
 
-        {/* Navigation list */}
-        <div className="flex-1 overflow-y-auto px-3 py-4 space-y-1">
-          <div className="px-3 pb-2 text-[10px] font-bold text-slate-400 uppercase tracking-wider">
-            Main Navigation
-          </div>
-          {navItems.map((item) => {
-            const Icon = item.icon;
-            const isActive = pathname === item.href || (item.href !== '/admin' && item.href !== '/teacher' && item.href !== '/student' && pathname.startsWith(item.href));
-
+        {/* Nav Links */}
+        <nav className="space-y-1">
+          {links.map((link) => {
+            const Icon = link.icon;
+            const isActive = pathname === link.href;
             return (
               <Link
-                key={item.href}
-                href={item.href}
-                onClick={onClose}
-                className={`flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-semibold transition-all ${
+                key={link.href}
+                href={link.href}
+                className={`flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-bold transition ${
                   isActive
-                    ? 'bg-indigo-600 text-white shadow-md shadow-indigo-500/20'
-                    : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900'
+                    ? 'bg-amber-500 text-slate-950 shadow-md shadow-amber-500/20 font-black'
+                    : 'text-slate-400 hover:text-white hover:bg-slate-800'
                 }`}
               >
-                <Icon className={`w-4 h-4 shrink-0 ${isActive ? 'text-white' : 'text-slate-400'}`} />
-                <span className="truncate">{item.label}</span>
+                <Icon className={`w-4 h-4 ${isActive ? 'text-slate-950' : 'text-slate-400'}`} />
+                <span>{link.label}</span>
               </Link>
             );
           })}
-        </div>
+        </nav>
+      </div>
 
-        {/* Footer info */}
-        <div className="p-4 border-t border-slate-100 bg-slate-50/50">
-          <div className="rounded-xl p-3 bg-gradient-to-br from-indigo-50 to-violet-50 border border-indigo-100/80">
-            <div className="flex items-center gap-2 mb-1">
-              <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
-              <span className="text-[11px] font-bold text-slate-800">CodSoft Task 1</span>
-            </div>
-            <p className="text-[10px] text-slate-500">EduManage v1.0.0 • Full Stack SIS</p>
-          </div>
-        </div>
-      </aside>
-    </>
+      {/* Back to Customer Menu */}
+      <div className="pt-4 border-t border-slate-800">
+        <Link
+          href="/menu"
+          className="flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-semibold text-slate-400 hover:text-amber-400 hover:bg-slate-800/60 transition"
+        >
+          <ArrowLeft className="w-4 h-4" />
+          <span>Back to Restaurant</span>
+        </Link>
+      </div>
+    </aside>
   );
 };

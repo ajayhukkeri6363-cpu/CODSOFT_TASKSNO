@@ -5,42 +5,31 @@ import prisma from '@/lib/prisma';
 export const dynamic = 'force-dynamic';
 
 export async function GET() {
-  const session = await getCurrentUser();
-  if (!session) {
-    return NextResponse.json({ user: null }, { status: 401 });
-  }
+  try {
+    const session = await getCurrentUser();
+    if (!session) {
+      return NextResponse.json({ user: null }, { status: 401 });
+    }
 
-  const fullUser = await prisma.user.findUnique({
-    where: { id: session.id },
-    include: {
-      teacherProfile: {
-        include: {
-          managedClasses: true,
-          subjects: true,
-        },
+    const user = await prisma.user.findUnique({
+      where: { id: session.id },
+      select: {
+        id: true,
+        email: true,
+        role: true,
+        name: true,
+        phone: true,
+        avatar: true,
       },
-      studentProfile: {
-        include: {
-          class: true,
-        },
-      },
-    },
-  });
+    });
 
-  if (!fullUser) {
-    return NextResponse.json({ user: null }, { status: 404 });
+    if (!user) {
+      return NextResponse.json({ user: null }, { status: 401 });
+    }
+
+    return NextResponse.json({ user });
+  } catch (error) {
+    console.error('Error fetching current user:', error);
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
-
-  return NextResponse.json({
-    user: {
-      id: fullUser.id,
-      email: fullUser.email,
-      name: fullUser.name,
-      role: fullUser.role,
-      avatar: fullUser.avatar,
-      phone: fullUser.phone,
-      teacherProfile: fullUser.teacherProfile,
-      studentProfile: fullUser.studentProfile,
-    },
-  });
 }

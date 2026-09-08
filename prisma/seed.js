@@ -4,590 +4,680 @@ const bcrypt = require('bcryptjs');
 const prisma = new PrismaClient();
 
 async function main() {
-  console.log('🌱 Seeding EduManage database with realistic demo data...');
+  console.log('🍽️ Seeding DineDesk Restaurant Ordering & Table Management Platform...');
 
   // Clean existing tables (in reverse relation order)
-  await prisma.announcement.deleteMany();
-  await prisma.academicRecord.deleteMany();
-  await prisma.fee.deleteMany();
-  await prisma.result.deleteMany();
-  await prisma.examination.deleteMany();
-  await prisma.attendance.deleteMany();
-  await prisma.subject.deleteMany();
-  await prisma.student.deleteMany();
-  await prisma.class.deleteMany();
-  await prisma.teacher.deleteMany();
+  await prisma.payment.deleteMany();
+  await prisma.orderItem.deleteMany();
+  await prisma.order.deleteMany();
+  await prisma.reservation.deleteMany();
+  await prisma.restaurantTable.deleteMany();
+  await prisma.menuItem.deleteMany();
+  await prisma.menuCategory.deleteMany();
   await prisma.user.deleteMany();
 
   const adminPassword = await bcrypt.hash('admin123', 10);
-  const teacherPassword = await bcrypt.hash('teacher123', 10);
-  const studentPassword = await bcrypt.hash('student123', 10);
+  const staffPassword = await bcrypt.hash('staff123', 10);
+  const customerPassword = await bcrypt.hash('customer123', 10);
 
-  // 1. Create Admin User
+  // 1. Create Users
   const adminUser = await prisma.user.create({
     data: {
-      email: 'admin@edumanage.com',
+      email: 'admin@dinedesk.com',
       passwordHash: adminPassword,
       role: 'ADMIN',
-      name: 'Dr. Eleanor Vance',
-      avatar: 'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=150&auto=format&fit=crop&q=80',
-      phone: '+1 (555) 019-2834',
+      name: 'Chef Alessandro Rossi',
+      phone: '+1 (555) 782-9001',
+      avatar: 'https://images.unsplash.com/photo-1577219491135-ce391730fb2c?w=200&auto=format&fit=crop&q=80',
     },
   });
 
-  // 2. Create Teachers
-  const teacher1User = await prisma.user.create({
+  const staffChef = await prisma.user.create({
     data: {
-      email: 'sarah.jenkins@edumanage.com',
-      passwordHash: teacherPassword,
-      role: 'TEACHER',
-      name: 'Ms. Sarah Jenkins',
-      avatar: 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=150&auto=format&fit=crop&q=80',
-      phone: '+1 (555) 234-5678',
+      email: 'chef.marco@dinedesk.com',
+      passwordHash: staffPassword,
+      role: 'STAFF',
+      name: 'Marco Bellini (Head Chef)',
+      phone: '+1 (555) 782-9002',
+      avatar: 'https://images.unsplash.com/photo-1581299894007-aaa50297cf16?w=200&auto=format&fit=crop&q=80',
     },
   });
 
-  const teacher1 = await prisma.teacher.create({
+  const staffFloor = await prisma.user.create({
     data: {
-      userId: teacher1User.id,
-      employeeId: 'TCH-2021-001',
-      qualification: 'M.Sc. Mathematics, B.Ed.',
-      specialization: 'Advanced Calculus & Computer Science',
-      department: 'Science & Mathematics',
-      joiningDate: new Date('2021-08-15'),
-      phone: '+1 (555) 234-5678',
-      address: '42 Academic Way, Suite 100, Cambridge, MA',
+      email: 'waiter.lucas@dinedesk.com',
+      passwordHash: staffPassword,
+      role: 'STAFF',
+      name: 'Lucas Silva (Floor Lead)',
+      phone: '+1 (555) 782-9003',
+      avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=200&auto=format&fit=crop&q=80',
     },
   });
 
-  const teacher2User = await prisma.user.create({
+  const customer1 = await prisma.user.create({
     data: {
-      email: 'robert.vance@edumanage.com',
-      passwordHash: teacherPassword,
-      role: 'TEACHER',
-      name: 'Mr. Robert Vance',
-      avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&auto=format&fit=crop&q=80',
-      phone: '+1 (555) 345-6789',
+      email: 'sophia.miller@example.com',
+      passwordHash: customerPassword,
+      role: 'CUSTOMER',
+      name: 'Sophia Miller',
+      phone: '+1 (555) 912-3456',
+      avatar: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=200&auto=format&fit=crop&q=80',
     },
   });
 
-  const teacher2 = await prisma.teacher.create({
+  const customer2 = await prisma.user.create({
     data: {
-      userId: teacher2User.id,
-      employeeId: 'TCH-2019-004',
-      qualification: 'M.A. English Literature & History',
-      specialization: 'British Literature & World History',
-      department: 'Humanities',
-      joiningDate: new Date('2019-07-01'),
-      phone: '+1 (555) 345-6789',
-      address: '108 Scholar Street, Boston, MA',
+      email: 'ethan.hunt@example.com',
+      passwordHash: customerPassword,
+      role: 'CUSTOMER',
+      name: 'Ethan Hunt',
+      phone: '+1 (555) 823-4567',
+      avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=200&auto=format&fit=crop&q=80',
     },
   });
 
-  const teacher3User = await prisma.user.create({
+  const customer3 = await prisma.user.create({
     data: {
-      email: 'david.chen@edumanage.com',
-      passwordHash: teacherPassword,
-      role: 'TEACHER',
-      name: 'Dr. David Chen',
-      avatar: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=150&auto=format&fit=crop&q=80',
-      phone: '+1 (555) 456-7890',
-    },
-  });
-
-  const teacher3 = await prisma.teacher.create({
-    data: {
-      userId: teacher3User.id,
-      employeeId: 'TCH-2020-008',
-      qualification: 'Ph.D. in Physics',
-      specialization: 'Quantum Mechanics & Applied Physics',
-      department: 'Physical Sciences',
-      joiningDate: new Date('2020-01-10'),
-      phone: '+1 (555) 456-7890',
-      address: '77 Quantum Blvd, Cambridge, MA',
-    },
-  });
-
-  // 3. Create Classes
-  const class10A = await prisma.class.create({
-    data: {
-      name: 'Grade 10-A',
-      section: 'A',
-      gradeLevel: 'Grade 10',
-      roomNumber: 'Room 101',
-      capacity: 35,
-      classTeacherId: teacher1.id,
-    },
-  });
-
-  const class10B = await prisma.class.create({
-    data: {
-      name: 'Grade 10-B',
-      section: 'B',
-      gradeLevel: 'Grade 10',
-      roomNumber: 'Room 102',
-      capacity: 35,
-      classTeacherId: teacher2.id,
-    },
-  });
-
-  const class11Sci = await prisma.class.create({
-    data: {
-      name: 'Grade 11-Science',
-      section: 'Sci-A',
-      gradeLevel: 'Grade 11',
-      roomNumber: 'Lab Block 204',
-      capacity: 30,
-      classTeacherId: teacher3.id,
-    },
-  });
-
-  const class12Com = await prisma.class.create({
-    data: {
-      name: 'Grade 12-Commerce',
-      section: 'Com-A',
-      gradeLevel: 'Grade 12',
-      roomNumber: 'Room 305',
-      capacity: 32,
-    },
-  });
-
-  // 4. Create Subjects for Classes
-  const subMath10A = await prisma.subject.create({
-    data: {
-      name: 'Mathematics',
-      code: 'MATH-10',
-      classId: class10A.id,
-      teacherId: teacher1.id,
-    },
-  });
-
-  const subPhysics10A = await prisma.subject.create({
-    data: {
-      name: 'Physics',
-      code: 'PHYS-10',
-      classId: class10A.id,
-      teacherId: teacher3.id,
-    },
-  });
-
-  const subEnglish10A = await prisma.subject.create({
-    data: {
-      name: 'English Literature',
-      code: 'ENG-10',
-      classId: class10A.id,
-      teacherId: teacher2.id,
-    },
-  });
-
-  const subCS10A = await prisma.subject.create({
-    data: {
-      name: 'Computer Science',
-      code: 'CS-10',
-      classId: class10A.id,
-      teacherId: teacher1.id,
-    },
-  });
-
-  const subChem11Sci = await prisma.subject.create({
-    data: {
-      name: 'Chemistry',
-      code: 'CHEM-11',
-      classId: class11Sci.id,
-      teacherId: teacher3.id,
-    },
-  });
-
-  const subEcon12Com = await prisma.subject.create({
-    data: {
-      name: 'Economics',
-      code: 'ECON-12',
-      classId: class12Com.id,
-      teacherId: teacher2.id,
-    },
-  });
-
-  // 5. Create Students
-  const studentsData = [
-    {
-      name: 'Alex Morgan',
-      email: 'alex.morgan@edumanage.com',
-      rollNumber: '10A-01',
-      admissionNumber: 'ADM-2023-0101',
-      gender: 'MALE',
-      bloodGroup: 'O+',
-      dob: '2008-04-12',
-      classId: class10A.id,
-      parentName: 'Richard Morgan',
-      parentPhone: '+1 (555) 789-0123',
-      parentEmail: 'richard.morgan@example.com',
-      avatar: 'https://images.unsplash.com/photo-1539571696357-5a69c17a67c6?w=150&auto=format&fit=crop&q=80',
-    },
-    {
-      name: 'Emma Watson',
-      email: 'emma.watson@edumanage.com',
-      rollNumber: '10A-02',
-      admissionNumber: 'ADM-2023-0102',
-      gender: 'FEMALE',
-      bloodGroup: 'A+',
-      dob: '2008-09-24',
-      classId: class10A.id,
-      parentName: 'Helen Watson',
-      parentPhone: '+1 (555) 890-1234',
-      parentEmail: 'helen.watson@example.com',
-      avatar: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=150&auto=format&fit=crop&q=80',
-    },
-    {
-      name: 'Liam Smith',
-      email: 'liam.smith@edumanage.com',
-      rollNumber: '10A-03',
-      admissionNumber: 'ADM-2023-0103',
-      gender: 'MALE',
-      bloodGroup: 'B+',
-      dob: '2008-11-05',
-      classId: class10A.id,
-      parentName: 'Marcus Smith',
-      parentPhone: '+1 (555) 901-2345',
-      parentEmail: 'marcus.smith@example.com',
-      avatar: 'https://images.unsplash.com/photo-1501196354995-cbb51c65aaea?w=150&auto=format&fit=crop&q=80',
-    },
-    {
-      name: 'Sophia Taylor',
-      email: 'sophia.taylor@edumanage.com',
-      rollNumber: '10B-01',
-      admissionNumber: 'ADM-2023-0104',
-      gender: 'FEMALE',
-      bloodGroup: 'AB+',
-      dob: '2008-02-18',
-      classId: class10B.id,
-      parentName: 'Catherine Taylor',
-      parentPhone: '+1 (555) 012-3456',
-      parentEmail: 'catherine.t@example.com',
-      avatar: 'https://images.unsplash.com/photo-1517841905240-472988babdf9?w=150&auto=format&fit=crop&q=80',
-    },
-    {
-      name: 'Noah Brown',
-      email: 'noah.brown@edumanage.com',
-      rollNumber: '11S-01',
-      admissionNumber: 'ADM-2022-0055',
-      gender: 'MALE',
-      bloodGroup: 'O-',
-      dob: '2007-06-30',
-      classId: class11Sci.id,
-      parentName: 'Daniel Brown',
-      parentPhone: '+1 (555) 123-4567',
-      parentEmail: 'daniel.b@example.com',
-      avatar: 'https://images.unsplash.com/photo-1522075469751-3a6694fb2f61?w=150&auto=format&fit=crop&q=80',
-    },
-    {
+      email: 'olivia.davis@example.com',
+      passwordHash: customerPassword,
+      role: 'CUSTOMER',
       name: 'Olivia Davis',
-      email: 'olivia.davis@edumanage.com',
-      rollNumber: '12C-01',
-      admissionNumber: 'ADM-2021-0021',
-      gender: 'FEMALE',
-      bloodGroup: 'A-',
-      dob: '2006-08-14',
-      classId: class12Com.id,
-      parentName: 'Patricia Davis',
-      parentPhone: '+1 (555) 234-5670',
-      parentEmail: 'patricia.d@example.com',
-      avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80',
+      phone: '+1 (555) 634-5678',
+      avatar: 'https://images.unsplash.com/photo-1517841905240-472988babdf9?w=200&auto=format&fit=crop&q=80',
+    },
+  });
+
+  console.log('✅ Created Admin, Staff, and Customer users.');
+
+  // 2. Create Menu Categories
+  const catStarters = await prisma.menuCategory.create({
+    data: {
+      name: 'Artisanal Starters',
+      slug: 'starters',
+      description: 'Handcrafted appetizers, crispy bites, and gourmet boards.',
+      icon: 'Soup',
+      displayOrder: 1,
+    },
+  });
+
+  const catPizzas = await prisma.menuCategory.create({
+    data: {
+      name: 'Stone-Oven Pizzas',
+      slug: 'pizzas',
+      description: '48-hour fermented sourdough fired in our 800°F stone oven.',
+      icon: 'Pizza',
+      displayOrder: 2,
+    },
+  });
+
+  const catPastas = await prisma.menuCategory.create({
+    data: {
+      name: 'Handcrafted Pastas',
+      slug: 'pastas',
+      description: 'Freshly rolled bronze-die pasta with slow-simmered regional sauces.',
+      icon: 'UtensilsCrossed',
+      displayOrder: 3,
+    },
+  });
+
+  const catMains = await prisma.menuCategory.create({
+    data: {
+      name: 'Prime Grill & Mains',
+      slug: 'mains',
+      description: 'Wood-fired prime cuts, seared seafood, and seasonal creations.',
+      icon: 'Flame',
+      displayOrder: 4,
+    },
+  });
+
+  const catDesserts = await prisma.menuCategory.create({
+    data: {
+      name: 'Decadent Desserts',
+      slug: 'desserts',
+      description: 'Pastry chef specials, rich mousses, and artisanal gelatos.',
+      icon: 'Cake',
+      displayOrder: 5,
+    },
+  });
+
+  const catBeverages = await prisma.menuCategory.create({
+    data: {
+      name: 'Signature Beverages',
+      slug: 'beverages',
+      description: 'Craft mocktails, cold brews, artisanal sodas, and fresh infusions.',
+      icon: 'GlassWater',
+      displayOrder: 6,
+    },
+  });
+
+  console.log('✅ Created 6 menu categories.');
+
+  // 3. Create Menu Items (18 items)
+  const menuItemsData = [
+    // Starters
+    {
+      categoryId: catStarters.id,
+      name: 'Truffle Burrata & Heirloom Bruschetta',
+      slug: 'truffle-burrata-bruschetta',
+      description: 'Creamy Pugliese burrata, heirloom cherry tomatoes, cold-pressed basil oil, 12-year balsamic glaze on toasted ciabatta.',
+      price: 16.50,
+      image: 'https://images.unsplash.com/photo-1592417817098-8f3d69106093?w=600&auto=format&fit=crop&q=80',
+      isVeg: true,
+      isGlutenFree: false,
+      isSpicy: false,
+      isPopular: true,
+      prepTimeMinutes: 12,
+      calories: 420,
+      ingredients: 'Burrata cheese, Heirloom tomatoes, Ciabatta bread, Basil, Extra virgin olive oil, Balsamic reduction',
+    },
+    {
+      categoryId: catStarters.id,
+      name: 'Crispy Calamari Fritti',
+      slug: 'crispy-calamari-fritti',
+      description: 'Tender Monterey squid tossed in seasoned semolina, flash-fried with grilled Meyer lemon and spicy Calabrian chili aioli.',
+      price: 18.00,
+      image: 'https://images.unsplash.com/photo-1604909052743-94e838986d24?w=600&auto=format&fit=crop&q=80',
+      isVeg: false,
+      isGlutenFree: false,
+      isSpicy: true,
+      isPopular: true,
+      prepTimeMinutes: 14,
+      calories: 510,
+      ingredients: 'Calamari, Semolina crust, Meyer lemon, Garlic aioli, Calabrian chili paste, Fresh parsley',
+    },
+    {
+      categoryId: catStarters.id,
+      name: 'Wild Forest Mushroom Arancini',
+      slug: 'wild-mushroom-arancini',
+      description: 'Crispy risotto spheres stuffed with porcini mushrooms, fontina cheese center, served over roasted garlic truffle fondue.',
+      price: 15.00,
+      image: 'https://images.unsplash.com/photo-1541529086526-db283c563270?w=600&auto=format&fit=crop&q=80',
+      isVeg: true,
+      isGlutenFree: false,
+      isSpicy: false,
+      isPopular: false,
+      prepTimeMinutes: 15,
+      calories: 480,
+      ingredients: 'Arborio rice, Porcini mushrooms, Fontina cheese, Panko breadcrumbs, Truffle cream',
+    },
+
+    // Pizzas
+    {
+      categoryId: catPizzas.id,
+      name: 'Margherita D.O.P. di Bufala',
+      slug: 'margherita-dop-di-bufala',
+      description: 'San Marzano D.O.P. tomato sauce, fresh buffalo mozzarella, fragrant sweet basil, sea salt, and extra virgin olive oil.',
+      price: 21.00,
+      image: 'https://images.unsplash.com/photo-1604382355076-af4b0eb60143?w=600&auto=format&fit=crop&q=80',
+      isVeg: true,
+      isGlutenFree: false,
+      isSpicy: false,
+      isPopular: true,
+      prepTimeMinutes: 16,
+      calories: 780,
+      ingredients: '48-hr fermented dough, San Marzano tomatoes, Buffalo mozzarella, Fresh basil leaves, Olive oil',
+    },
+    {
+      categoryId: catPizzas.id,
+      name: 'Spicy Diavola & Hot Honey',
+      slug: 'spicy-diavola-hot-honey',
+      description: 'Artisanal Calabrese salami, spicy nduja paste, smoked provolone, pickled red Fresno chilies, drizzled with habanero hot honey.',
+      price: 24.50,
+      image: 'https://images.unsplash.com/photo-1513104890138-7c749659a591?w=600&auto=format&fit=crop&q=80',
+      isVeg: false,
+      isGlutenFree: false,
+      isSpicy: true,
+      isPopular: true,
+      prepTimeMinutes: 18,
+      calories: 890,
+      ingredients: 'Sourdough crust, Calabrese salami, Nduja sausage, Provolone, Fresno peppers, Hot honey drizzle',
+    },
+    {
+      categoryId: catPizzas.id,
+      name: 'Tartufo Nero & Wild Mushroom',
+      slug: 'tartufo-nero-wild-mushroom',
+      description: 'Black truffle cream base, roasted wild chanterelles, fior di latte, aged pecorino romano, and fresh thyme.',
+      price: 26.00,
+      image: 'https://images.unsplash.com/photo-1565299624946-b28f40a0ae38?w=600&auto=format&fit=crop&q=80',
+      isVeg: true,
+      isGlutenFree: false,
+      isSpicy: false,
+      isPopular: false,
+      prepTimeMinutes: 18,
+      calories: 820,
+      ingredients: 'Black truffle cream, Chanterelle mushrooms, Fior di latte, Pecorino Romano, Fresh thyme',
+    },
+
+    // Pastas
+    {
+      categoryId: catPastas.id,
+      name: 'Handcrafted Tagliatelle al Tartufo',
+      slug: 'tagliatelle-al-tartufo',
+      description: 'Egg tagliatelle rolled in-house, tossed in cultured French butter, 24-month Parmigiano-Reggiano, and shaved Norcia black truffle.',
+      price: 28.00,
+      image: 'https://images.unsplash.com/photo-1621996346565-e3d5d62817d2?w=600&auto=format&fit=crop&q=80',
+      isVeg: true,
+      isGlutenFree: false,
+      isSpicy: false,
+      isPopular: true,
+      prepTimeMinutes: 16,
+      calories: 640,
+      ingredients: 'Fresh egg tagliatelle, Cultured butter, Parmigiano-Reggiano, Black truffle shavings',
+    },
+    {
+      categoryId: catPastas.id,
+      name: 'Slow-Braised Short Rib Pappardelle',
+      slug: 'short-rib-pappardelle',
+      description: 'Wide ribbon pappardelle with 8-hour braised Angus beef short rib ragù, rosemary, San Marzano tomato reduction, and whipped ricotta.',
+      price: 27.50,
+      image: 'https://images.unsplash.com/photo-1551183053-bf91a1d81141?w=600&auto=format&fit=crop&q=80',
+      isVeg: false,
+      isGlutenFree: false,
+      isSpicy: false,
+      isPopular: true,
+      prepTimeMinutes: 18,
+      calories: 760,
+      ingredients: 'Pappardelle pasta, Angus beef short rib, Chianti red wine, Mirepoix, Whipped whole milk ricotta',
+    },
+    {
+      categoryId: catPastas.id,
+      name: 'Spaghetti ai Frutti di Mare',
+      slug: 'spaghetti-frutti-di-mare',
+      description: 'Extruded durum wheat spaghetti with jumbo prawns, Manila clams, PEI mussels, white wine, garlic, cherry tomatoes, and red chili flakes.',
+      price: 29.00,
+      image: 'https://images.unsplash.com/photo-1563379091339-03b21ab4a4f8?w=600&auto=format&fit=crop&q=80',
+      isVeg: false,
+      isGlutenFree: false,
+      isSpicy: true,
+      isPopular: false,
+      prepTimeMinutes: 20,
+      calories: 610,
+      ingredients: 'Spaghetti, Gulf tiger prawns, Manila clams, Mussels, White wine broth, Garlic, Parsley',
+    },
+
+    // Mains
+    {
+      categoryId: catMains.id,
+      name: 'Wood-Fired Prime Ribeye Steak (14oz)',
+      slug: 'prime-ribeye-steak',
+      description: 'USDA Prime dry-aged 28 days, grilled over red oak, served with bone marrow roasted garlic butter and crispy duck fat potatoes.',
+      price: 46.00,
+      image: 'https://images.unsplash.com/photo-1558030006-450675393462?w=600&auto=format&fit=crop&q=80',
+      isVeg: false,
+      isGlutenFree: true,
+      isSpicy: false,
+      isPopular: true,
+      prepTimeMinutes: 24,
+      calories: 950,
+      ingredients: 'USDA Prime ribeye, Bone marrow compound butter, Fingerling potatoes, Rosemary, Sea salt flakes',
+    },
+    {
+      categoryId: catMains.id,
+      name: 'Pan-Roasted Chilean Sea Bass',
+      slug: 'pan-roasted-chilean-sea-bass',
+      description: 'Sustainably caught sea bass fillet, saffron cauliflower silk, baby leeks, crispy capers, and citrus-caper emulsion.',
+      price: 42.00,
+      image: 'https://images.unsplash.com/photo-1519708227418-c8fd9a32b7a2?w=600&auto=format&fit=crop&q=80',
+      isVeg: false,
+      isGlutenFree: true,
+      isSpicy: false,
+      isPopular: false,
+      prepTimeMinutes: 22,
+      calories: 580,
+      ingredients: 'Chilean sea bass, Saffron puree, Baby leeks, Crispy capers, Lemon beurre blanc',
+    },
+    {
+      categoryId: catMains.id,
+      name: 'Roasted Herb Butter Half Chicken',
+      slug: 'roasted-herb-half-chicken',
+      description: 'Organic free-range chicken roasted with garlic herb butter, charred broccolini, creamy Yukon gold potato puree, and pan jus.',
+      price: 31.00,
+      image: 'https://images.unsplash.com/photo-1598103442097-8b74394b95c6?w=600&auto=format&fit=crop&q=80',
+      isVeg: false,
+      isGlutenFree: true,
+      isSpicy: false,
+      isPopular: false,
+      prepTimeMinutes: 20,
+      calories: 720,
+      ingredients: 'Organic chicken, Garlic herb butter, Charred broccolini, Yukon Gold potatoes, Natural pan reduction',
+    },
+
+    // Desserts
+    {
+      categoryId: catDesserts.id,
+      name: 'Classic Venetian Tiramisù al Mascarpone',
+      slug: 'venetian-tiramisu',
+      description: 'Savoiardi ladyfingers steeped in Illy espresso & Marsala wine, layered with fluffy mascarpone cream and Valrhona cocoa.',
+      price: 12.50,
+      image: 'https://images.unsplash.com/photo-1571877227200-a0d98ea607e9?w=600&auto=format&fit=crop&q=80',
+      isVeg: true,
+      isGlutenFree: false,
+      isSpicy: false,
+      isPopular: true,
+      prepTimeMinutes: 8,
+      calories: 450,
+      ingredients: 'Savoiardi biscuits, Illy espresso, Mascarpone cheese, Farm egg yolks, Valrhona dark cocoa',
+    },
+    {
+      categoryId: catDesserts.id,
+      name: 'Molten Belgian Chocolate Lava Cake',
+      slug: 'chocolate-lava-cake',
+      description: 'Warm 70% dark chocolate souffle cake with a molten center, served with house-spun Tahitian vanilla bean gelato and raspberry coulis.',
+      price: 14.00,
+      image: 'https://images.unsplash.com/photo-1606313564200-e75d5e30476c?w=600&auto=format&fit=crop&q=80',
+      isVeg: true,
+      isGlutenFree: false,
+      isSpicy: false,
+      isPopular: true,
+      prepTimeMinutes: 14,
+      calories: 590,
+      ingredients: '70% Belgian chocolate, Butter, Eggs, Vanilla gelato, Raspberry coulis',
+    },
+    {
+      categoryId: catDesserts.id,
+      name: 'Sicilian Pistachio Panna Cotta',
+      slug: 'sicilian-pistachio-panna-cotta',
+      description: 'Silky cream infused with Bronte pistachio paste, layered with roasted crushed pistachios and pomegranate reduction.',
+      price: 13.00,
+      image: 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=600&auto=format&fit=crop&q=80',
+      isVeg: true,
+      isGlutenFree: true,
+      isSpicy: false,
+      isPopular: false,
+      prepTimeMinutes: 8,
+      calories: 380,
+      ingredients: 'Fresh heavy cream, Bronte pistachios, Gelatin, Pomegranate seeds, Wild honey',
+    },
+
+    // Beverages
+    {
+      categoryId: catBeverages.id,
+      name: 'Smoked Rosemary Citrus Mocktail',
+      slug: 'smoked-rosemary-citrus-mocktail',
+      description: 'Blood orange juice, fresh yuzu, agave nectar, sparkling San Pellegrino, torched rosemary sprig, served over crystal ice rock.',
+      price: 9.50,
+      image: 'https://images.unsplash.com/photo-1513558161293-cdaf765ed2fd?w=600&auto=format&fit=crop&q=80',
+      isVeg: true,
+      isGlutenFree: true,
+      isSpicy: false,
+      isPopular: true,
+      prepTimeMinutes: 6,
+      calories: 140,
+      ingredients: 'Blood orange juice, Yuzu puree, Agave nectar, Torched fresh rosemary, Sparkling water',
+    },
+    {
+      categoryId: catBeverages.id,
+      name: 'Passionfruit Ginger Fizz',
+      slug: 'passionfruit-ginger-fizz',
+      description: 'Tropical passionfruit pulp, cold-pressed spicy ginger juice, mint leaves, lime juice, and artisanal tonic.',
+      price: 8.50,
+      image: 'https://images.unsplash.com/photo-1551024709-8f23befc6f87?w=600&auto=format&fit=crop&q=80',
+      isVeg: true,
+      isGlutenFree: true,
+      isSpicy: true,
+      isPopular: false,
+      prepTimeMinutes: 6,
+      calories: 120,
+      ingredients: 'Passionfruit, Fresh ginger juice, Mint, Lime, Tonic water',
+    },
+    {
+      categoryId: catBeverages.id,
+      name: 'Cold Drip Nitro Reserve Coffee',
+      slug: 'nitro-cold-brew-coffee',
+      description: '18-hour slow-steeped Ethiopian single-origin beans infused with nitrogen for a velvety micro-foam head and chocolate notes.',
+      price: 7.00,
+      image: 'https://images.unsplash.com/photo-1517701604599-bb29b565090c?w=600&auto=format&fit=crop&q=80',
+      isVeg: true,
+      isGlutenFree: true,
+      isSpicy: false,
+      isPopular: false,
+      prepTimeMinutes: 4,
+      calories: 10,
+      ingredients: 'Ethiopian Yirgacheffe coffee beans, Triple-filtered water, Pure nitrogen gas',
     },
   ];
 
-  const createdStudents = [];
-
-  for (const s of studentsData) {
-    const user = await prisma.user.create({
-      data: {
-        email: s.email,
-        passwordHash: studentPassword,
-        role: 'STUDENT',
-        name: s.name,
-        avatar: s.avatar,
-        phone: s.parentPhone,
-      },
+  const createdMenuItems = [];
+  for (const item of menuItemsData) {
+    const created = await prisma.menuItem.create({
+      data: item,
     });
-
-    const student = await prisma.student.create({
-      data: {
-        userId: user.id,
-        rollNumber: s.rollNumber,
-        admissionNumber: s.admissionNumber,
-        gender: s.gender,
-        bloodGroup: s.bloodGroup,
-        dateOfBirth: new Date(s.dob),
-        classId: s.classId,
-        parentName: s.parentName,
-        parentPhone: s.parentPhone,
-        parentEmail: s.parentEmail,
-        address: '742 Evergreen Terrace, Springfield',
-      },
-      include: {
-        user: true,
-        class: true,
-      },
-    });
-
-    createdStudents.push(student);
+    createdMenuItems.push(created);
   }
 
-  // 6. Create Historical Attendance (Last 15 weekdays)
-  console.log('Generating attendance records...');
-  const attendanceStatuses = ['PRESENT', 'PRESENT', 'PRESENT', 'PRESENT', 'LATE', 'ABSENT', 'PRESENT', 'PRESENT'];
+  console.log(`✅ Created ${createdMenuItems.length} gourmet menu items with complete nutritional & allergen data.`);
+
+  // 4. Create Restaurant Tables (10 tables)
+  const tablesData = [
+    { tableNumber: 'Table 1', capacity: 2, location: 'WINDOW_SIDE', status: 'AVAILABLE' },
+    { tableNumber: 'Table 2', capacity: 2, location: 'WINDOW_SIDE', status: 'OCCUPIED' },
+    { tableNumber: 'Table 3', capacity: 4, location: 'MAIN_HALL', status: 'AVAILABLE' },
+    { tableNumber: 'Table 4', capacity: 4, location: 'MAIN_HALL', status: 'AVAILABLE' },
+    { tableNumber: 'Table 5', capacity: 6, location: 'MAIN_HALL', status: 'OCCUPIED' },
+    { tableNumber: 'Table 6', capacity: 4, location: 'PATIO', status: 'RESERVED' },
+    { tableNumber: 'Table 7', capacity: 4, location: 'PATIO', status: 'AVAILABLE' },
+    { tableNumber: 'Table 8', capacity: 8, location: 'VIP_LOUNGE', status: 'AVAILABLE' },
+    { tableNumber: 'Table 9', capacity: 10, location: 'VIP_LOUNGE', status: 'AVAILABLE' },
+    { tableNumber: 'Table 10', capacity: 4, location: 'ROOFTOP', status: 'CLEANING' },
+  ];
+
+  const createdTables = [];
+  for (const t of tablesData) {
+    const created = await prisma.restaurantTable.create({
+      data: t,
+    });
+    createdTables.push(created);
+  }
+
+  console.log(`✅ Created ${createdTables.length} dining tables across all restaurant zones.`);
+
+  // 5. Create Table Reservations
   const today = new Date();
-  
-  for (let i = 14; i >= 0; i--) {
-    const d = new Date(today);
-    d.setDate(d.getDate() - i);
-    // skip weekends
-    if (d.getDay() === 0 || d.getDay() === 6) continue;
+  const tomorrow = new Date(today);
+  tomorrow.setDate(tomorrow.getDate() + 1);
 
-    for (const student of createdStudents) {
-      // Alex has high attendance, Emma has perfect, Liam occasional late/absent
-      let status = 'PRESENT';
-      if (student.rollNumber === '10A-03' && i % 4 === 0) status = 'ABSENT';
-      else if (student.rollNumber === '10A-01' && i === 3) status = 'LATE';
-      else if (student.rollNumber === '11S-01' && i === 7) status = 'EXCUSED';
-
-      await prisma.attendance.create({
-        data: {
-          studentId: student.id,
-          classId: student.classId,
-          date: new Date(d.toISOString().split('T')[0] + 'T09:00:00.000Z'),
-          status: status,
-          remarks: status === 'LATE' ? 'Bus delayed' : status === 'EXCUSED' ? 'Medical leave' : null,
-          markedById: adminUser.id,
-        },
-      });
-    }
-  }
-
-  // 7. Create Examinations
-  const midtermExam = await prisma.examination.create({
-    data: {
-      name: 'Mid-Term Examination 2024',
-      examType: 'MIDTERM',
-      term: 'Term 1',
-      academicYear: '2024-2025',
-      startDate: new Date('2024-10-10'),
-      endDate: new Date('2024-10-22'),
-      status: 'COMPLETED',
+  const reservationsData = [
+    {
+      userId: customer1.id,
+      tableId: createdTables[5].id, // Table 6 (Patio)
+      customerName: customer1.name,
+      customerEmail: customer1.email,
+      customerPhone: customer1.phone,
+      reservationDate: today,
+      timeSlot: '07:30 PM',
+      guestCount: 4,
+      specialRequests: 'Anniversary dinner. Would appreciate a quiet corner on the patio.',
+      status: 'CONFIRMED',
     },
-  });
-
-  const finalExam = await prisma.examination.create({
-    data: {
-      name: 'Annual Final Examination 2025',
-      examType: 'FINAL',
-      term: 'Final Term',
-      academicYear: '2024-2025',
-      startDate: new Date('2025-03-15'),
-      endDate: new Date('2025-03-30'),
-      status: 'UPCOMING',
+    {
+      userId: customer2.id,
+      tableId: createdTables[7].id, // Table 8 (VIP)
+      customerName: customer2.name,
+      customerEmail: customer2.email,
+      customerPhone: customer2.phone,
+      reservationDate: tomorrow,
+      timeSlot: '08:00 PM',
+      guestCount: 6,
+      specialRequests: 'Executive client dinner. Please have sparkling water ready.',
+      status: 'CONFIRMED',
     },
-  });
-
-  // 8. Create Results for Grade 10-A students in Midterm
-  const grade10Students = createdStudents.filter((s) => s.classId === class10A.id);
-  const class10Subjects = [subMath10A, subPhysics10A, subEnglish10A, subCS10A];
-
-  const resultsSample = [
-    // Alex Morgan
-    { marks: 92, grade: 'A+', remarks: 'Outstanding performance in Mathematics' },
-    { marks: 88, grade: 'A', remarks: 'Good analytical understanding' },
-    { marks: 85, grade: 'A', remarks: 'Very good essay structure' },
-    { marks: 95, grade: 'A+', remarks: 'Excellent coding logic and project work' },
-    // Emma Watson
-    { marks: 96, grade: 'A+', remarks: 'Top marks in the class, exceptional rigor' },
-    { marks: 94, grade: 'A+', remarks: 'Flawless theoretical grasp' },
-    { marks: 98, grade: 'A+', remarks: 'Exemplary creative writing' },
-    { marks: 91, grade: 'A+', remarks: 'Great project implementation' },
-    // Liam Smith
-    { marks: 74, grade: 'B', remarks: 'Good effort, needs algebra practice' },
-    { marks: 68, grade: 'C', remarks: 'Needs revision in kinematics' },
-    { marks: 82, grade: 'A', remarks: 'Strong vocabulary and comprehension' },
-    { marks: 79, grade: 'B', remarks: 'Solid foundational concepts' },
+    {
+      userId: customer3.id,
+      tableId: createdTables[0].id, // Table 1 (Window)
+      customerName: customer3.name,
+      customerEmail: customer3.email,
+      customerPhone: customer3.phone,
+      reservationDate: today,
+      timeSlot: '01:00 PM',
+      guestCount: 2,
+      specialRequests: 'Window view preferred for lunch meeting.',
+      status: 'SEATED',
+    },
   ];
 
-  let resIdx = 0;
-  for (const st of grade10Students) {
-    for (const sub of class10Subjects) {
-      const sample = resultsSample[resIdx] || { marks: 80, grade: 'A', remarks: 'Satisfactory' };
-      const totalMarks = 100;
-      const percentage = (sample.marks / totalMarks) * 100;
-
-      await prisma.result.create({
-        data: {
-          examId: midtermExam.id,
-          studentId: st.id,
-          subjectId: sub.id,
-          marksObtained: sample.marks,
-          totalMarks: totalMarks,
-          percentage: percentage,
-          grade: sample.grade,
-          remarks: sample.remarks,
-        },
-      });
-      resIdx++;
-    }
+  for (const r of reservationsData) {
+    await prisma.reservation.create({
+      data: r,
+    });
   }
 
-  // 9. Create Fee Invoices
-  console.log('Generating fee records...');
-  const feesData = [
+  console.log('✅ Created table reservations.');
+
+  // 6. Create Active and Historical Orders
+  const ordersData = [
+    // Order 1: Active In-Kitchen (Dine-in at Table 2)
     {
-      student: createdStudents[0], // Alex
-      invoiceNumber: 'INV-2024-001',
-      title: 'Term 1 Tuition & Lab Fee',
-      amount: 1500,
-      paidAmount: 1500,
-      dueDate: new Date('2024-09-01'),
-      paymentDate: new Date('2024-08-28'),
-      paymentMethod: 'ONLINE',
-      status: 'PAID',
-    },
-    {
-      student: createdStudents[0],
-      invoiceNumber: 'INV-2024-002',
-      title: 'Term 2 Tuition Fee',
-      amount: 1200,
-      paidAmount: 600,
-      dueDate: new Date('2024-12-15'),
-      paymentDate: new Date('2024-12-05'),
-      paymentMethod: 'BANK_TRANSFER',
-      status: 'PARTIAL',
-    },
-    {
-      student: createdStudents[1], // Emma
-      invoiceNumber: 'INV-2024-003',
-      title: 'Term 1 Full Tuition & Sports Fee',
-      amount: 1650,
-      paidAmount: 1650,
-      dueDate: new Date('2024-09-01'),
-      paymentDate: new Date('2024-08-25'),
-      paymentMethod: 'ONLINE',
-      status: 'PAID',
-    },
-    {
-      student: createdStudents[2], // Liam
-      invoiceNumber: 'INV-2024-004',
-      title: 'Term 1 Tuition Fee',
-      amount: 1200,
-      paidAmount: 0,
-      dueDate: new Date('2024-09-01'),
-      paymentDate: null,
-      paymentMethod: null,
-      status: 'OVERDUE',
-    },
-    {
-      student: createdStudents[3], // Sophia
-      invoiceNumber: 'INV-2024-005',
-      title: 'Term 1 Tuition & Library Fee',
-      amount: 1350,
-      paidAmount: 0,
-      dueDate: new Date('2024-12-30'),
-      paymentDate: null,
-      paymentMethod: null,
-      status: 'PENDING',
-    },
-    {
-      student: createdStudents[4], // Noah
-      invoiceNumber: 'INV-2024-006',
-      title: 'Science Stream Comprehensive Fee',
-      amount: 1800,
-      paidAmount: 1800,
-      dueDate: new Date('2024-09-15'),
-      paymentDate: new Date('2024-09-10'),
+      orderNumber: 'ORD-2024-1001',
+      userId: customer1.id,
+      tableId: createdTables[1].id,
+      customerName: 'Sophia Miller',
+      customerEmail: 'sophia.miller@example.com',
+      customerPhone: '+1 (555) 912-3456',
+      orderType: 'DINE_IN',
+      status: 'PREPARING',
+      subtotal: 72.50,
+      tax: 5.98,
+      deliveryFee: 0,
+      discount: 0,
+      total: 78.48,
+      notes: 'Extra parmesan cheese on the pasta please.',
+      estimatedPrepMin: 20,
       paymentMethod: 'CARD',
-      status: 'PAID',
+      paymentStatus: 'PAID',
+      items: [
+        { menuItemId: createdMenuItems[0].id, quantity: 1, unitPrice: 16.50, totalPrice: 16.50, specialInstructions: 'Dressing on the side' },
+        { menuItemId: createdMenuItems[6].id, quantity: 1, unitPrice: 28.00, totalPrice: 28.00, specialInstructions: 'Al dente' },
+        { menuItemId: createdMenuItems[7].id, quantity: 1, unitPrice: 27.50, totalPrice: 27.50, specialInstructions: null },
+      ],
     },
+
+    // Order 2: Freshly Placed (Dine-in at Table 5)
     {
-      student: createdStudents[5], // Olivia
-      invoiceNumber: 'INV-2024-007',
-      title: 'Grade 12 Graduation & Tuition Fee',
-      amount: 1950,
-      paidAmount: 1950,
-      dueDate: new Date('2024-09-15'),
-      paymentDate: new Date('2024-09-12'),
+      orderNumber: 'ORD-2024-1002',
+      userId: customer2.id,
+      tableId: createdTables[4].id,
+      customerName: 'Ethan Hunt',
+      customerEmail: 'ethan.hunt@example.com',
+      customerPhone: '+1 (555) 823-4567',
+      orderType: 'DINE_IN',
+      status: 'PLACED',
+      subtotal: 108.50,
+      tax: 8.95,
+      deliveryFee: 0,
+      discount: 10.00,
+      total: 107.45,
+      notes: 'Please bring steaks medium rare.',
+      estimatedPrepMin: 25,
       paymentMethod: 'ONLINE',
-      status: 'PAID',
+      paymentStatus: 'PAID',
+      items: [
+        { menuItemId: createdMenuItems[9].id, quantity: 2, unitPrice: 46.00, totalPrice: 92.00, specialInstructions: 'Medium-rare with extra compound butter' },
+        { menuItemId: createdMenuItems[15].id, quantity: 2, unitPrice: 8.25, totalPrice: 16.50, specialInstructions: null },
+      ],
+    },
+
+    // Order 3: Food Ready for Pickup (Takeaway)
+    {
+      orderNumber: 'ORD-2024-1003',
+      userId: customer3.id,
+      tableId: null,
+      customerName: 'Olivia Davis',
+      customerEmail: 'olivia.davis@example.com',
+      customerPhone: '+1 (555) 634-5678',
+      orderType: 'TAKEAWAY',
+      status: 'READY',
+      subtotal: 45.50,
+      tax: 3.75,
+      deliveryFee: 0,
+      discount: 0,
+      total: 49.25,
+      notes: 'Customer will pick up at counter.',
+      estimatedPrepMin: 15,
+      paymentMethod: 'CARD',
+      paymentStatus: 'PAID',
+      items: [
+        { menuItemId: createdMenuItems[3].id, quantity: 1, unitPrice: 21.00, totalPrice: 21.00, specialInstructions: 'Cut into 8 slices' },
+        { menuItemId: createdMenuItems[4].id, quantity: 1, unitPrice: 24.50, totalPrice: 24.50, specialInstructions: 'Extra hot honey' },
+      ],
+    },
+
+    // Order 4: Completed Delivery Order
+    {
+      orderNumber: 'ORD-2024-1004',
+      userId: customer1.id,
+      tableId: null,
+      customerName: 'Sophia Miller',
+      customerEmail: 'sophia.miller@example.com',
+      customerPhone: '+1 (555) 912-3456',
+      orderType: 'DELIVERY',
+      status: 'COMPLETED',
+      subtotal: 58.50,
+      tax: 4.83,
+      deliveryFee: 4.99,
+      discount: 5.00,
+      total: 64.32,
+      deliveryAddress: '742 Evergreen Terrace, Apt 4B, Boston, MA',
+      notes: 'Leave at front desk with doorman.',
+      estimatedPrepMin: 30,
+      paymentMethod: 'ONLINE',
+      paymentStatus: 'PAID',
+      items: [
+        { menuItemId: createdMenuItems[1].id, quantity: 1, unitPrice: 18.00, totalPrice: 18.00, specialInstructions: null },
+        { menuItemId: createdMenuItems[10].id, quantity: 1, unitPrice: 42.00, totalPrice: 42.00, specialInstructions: null },
+        { menuItemId: createdMenuItems[12].id, quantity: 1, unitPrice: 12.50, totalPrice: 12.50, specialInstructions: null },
+      ],
     },
   ];
 
-  for (const fee of feesData) {
-    await prisma.fee.create({
+  for (const ord of ordersData) {
+    const createdOrder = await prisma.order.create({
       data: {
-        studentId: fee.student.id,
-        invoiceNumber: fee.invoiceNumber,
-        title: fee.title,
-        amount: fee.amount,
-        paidAmount: fee.paidAmount,
-        dueDate: fee.dueDate,
-        paymentDate: fee.paymentDate,
-        paymentMethod: fee.paymentMethod,
-        status: fee.status,
+        orderNumber: ord.orderNumber,
+        userId: ord.userId,
+        tableId: ord.tableId,
+        customerName: ord.customerName,
+        customerEmail: ord.customerEmail,
+        customerPhone: ord.customerPhone,
+        orderType: ord.orderType,
+        status: ord.status,
+        subtotal: ord.subtotal,
+        tax: ord.tax,
+        deliveryFee: ord.deliveryFee,
+        discount: ord.discount,
+        total: ord.total,
+        notes: ord.notes,
+        deliveryAddress: ord.deliveryAddress,
+        estimatedPrepMin: ord.estimatedPrepMin,
+      },
+    });
+
+    for (const it of ord.items) {
+      await prisma.orderItem.create({
+        data: {
+          orderId: createdOrder.id,
+          menuItemId: it.menuItemId,
+          quantity: it.quantity,
+          unitPrice: it.unitPrice,
+          totalPrice: it.totalPrice,
+          specialInstructions: it.specialInstructions,
+        },
+      });
+    }
+
+    await prisma.payment.create({
+      data: {
+        orderId: createdOrder.id,
+        transactionId: `TXN-${Math.floor(100000 + Math.random() * 900000)}`,
+        amount: ord.total,
+        paymentMethod: ord.paymentMethod,
+        status: ord.paymentStatus,
+        paidAt: new Date(),
       },
     });
   }
 
-  // 10. Create Academic Records (GPA & Transcripts)
-  const academicRecords = [
-    { student: createdStudents[0], term: 'Term 1', gpa: 3.82, rank: 2, status: 'PROMOTED', remarks: 'Exceptional math and computer science aptitude.' },
-    { student: createdStudents[1], term: 'Term 1', gpa: 3.98, rank: 1, status: 'PROMOTED', remarks: 'Top ranking student in the batch with academic honors.' },
-    { student: createdStudents[2], term: 'Term 1', gpa: 3.15, rank: 5, status: 'ONGOING', remarks: 'Steady progress, encouraged to seek math tutoring.' },
-    { student: createdStudents[3], term: 'Term 1', gpa: 3.65, rank: 3, status: 'PROMOTED', remarks: 'Consistent high effort across all subjects.' },
-    { student: createdStudents[4], term: 'Term 1', gpa: 3.75, rank: 2, status: 'PROMOTED', remarks: 'Excellent lab and theoretical physics performance.' },
-    { student: createdStudents[5], term: 'Term 1', gpa: 3.90, rank: 1, status: 'PROMOTED', remarks: 'Exemplary leadership and economics acumen.' },
-  ];
-
-  for (const rec of academicRecords) {
-    await prisma.academicRecord.create({
-      data: {
-        studentId: rec.student.id,
-        academicYear: '2024-2025',
-        term: rec.term,
-        gpa: rec.gpa,
-        totalCredits: 22,
-        rank: rec.rank,
-        status: rec.status,
-        remarks: rec.remarks,
-      },
-    });
-  }
-
-  // 11. Create Announcements
-  await prisma.announcement.create({
-    data: {
-      title: '🚀 Annual Science & Tech Exhibition 2025',
-      content: 'We are thrilled to announce EduManage Annual Innovation Fair scheduled for November 15th. Students are invited to submit their STEM and robotics projects by the end of this month.',
-      targetRole: 'ALL',
-      priority: 'HIGH',
-      authorId: adminUser.id,
-    },
-  });
-
-  await prisma.announcement.create({
-    data: {
-      title: '📊 Mid-Term Examination 2024 Report Cards Available',
-      content: 'Official digital report cards and subject grade sheets for the Mid-Term examinations are now published. Students and parents can view detailed score breakdowns from the Results portal.',
-      targetRole: 'ALL',
-      priority: 'NORMAL',
-      authorId: adminUser.id,
-    },
-  });
-
-  await prisma.announcement.create({
-    data: {
-      title: '📋 Faculty Notice: Term 2 Curriculum & Attendance Review',
-      content: 'All class teachers are requested to ensure attendance records and internal assessment entries are updated by Friday 4:00 PM for administrative audit.',
-      targetRole: 'TEACHER',
-      priority: 'HIGH',
-      authorId: adminUser.id,
-    },
-  });
-
-  console.log('✅ Database seeded successfully with realistic data!');
+  console.log('✅ Created orders, order items, and payment transactions.');
+  console.log('🎉 DineDesk database seeded successfully with full gourmet culinary operations!');
 }
 
 main()

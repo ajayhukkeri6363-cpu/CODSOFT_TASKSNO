@@ -1,8 +1,8 @@
 {
-  "name": "edumanage",
+  "name": "dinedesk",
   "version": "1.0.0",
   "private": true,
-  "description": "EduManage - Professional Student Management System (CodSoft Task 1)",
+  "description": "DineDesk - Restaurant Ordering & Table Management Platform (CodSoft Task 2)",
   "scripts": {
     "dev": "next dev",
     "build": "prisma generate && next build",
