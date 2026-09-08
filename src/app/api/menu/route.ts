@@ -1,11 +1,14 @@
 import { NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
 import { requireAuth } from '@/lib/auth';
+import { seedDatabaseIfEmpty } from '@/lib/seed';
 
 export const dynamic = 'force-dynamic';
 
 export async function GET(request: Request) {
   try {
+    await seedDatabaseIfEmpty();
+
     const { searchParams } = new URL(request.url);
     const categoryId = searchParams.get('categoryId');
     const categorySlug = searchParams.get('categorySlug');

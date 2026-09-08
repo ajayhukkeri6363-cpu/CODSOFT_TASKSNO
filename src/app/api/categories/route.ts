@@ -1,11 +1,14 @@
 import { NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
 import { requireAuth } from '@/lib/auth';
+import { seedDatabaseIfEmpty } from '@/lib/seed';
 
 export const dynamic = 'force-dynamic';
 
 export async function GET() {
   try {
+    await seedDatabaseIfEmpty();
+
     const categories = await prisma.menuCategory.findMany({
       orderBy: { displayOrder: 'asc' },
       include: {

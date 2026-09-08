@@ -1,9 +1,12 @@
 import { NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
 import { signToken, TOKEN_COOKIE_NAME } from '@/lib/auth';
+import { seedDatabaseIfEmpty } from '@/lib/seed';
 
 export async function POST(request: Request) {
   try {
+    await seedDatabaseIfEmpty();
+
     const { role } = await request.json();
 
     const targetEmail =
