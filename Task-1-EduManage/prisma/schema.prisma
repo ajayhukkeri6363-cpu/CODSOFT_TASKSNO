@@ -1,0 +1,188 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id            String         @id @default(cuid())
+  email         String         @unique
+  passwordHash  String
+  role          String         @default("STUDENT") // "ADMIN", "TEACHER", "STUDENT"
+  name          String
+  avatar        String?
+  phone         String?
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+
+  teacherProfile Teacher?
+  studentProfile Student?
+  announcements  Announcement[]
+}
+
+model Teacher {
+  id             String    @id @default(cuid())
+  userId         String    @unique
+  user           User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  employeeId     String    @unique
+  qualification  String
+  specialization String
+  department     String
+  joiningDate    DateTime  @default(now())
+  address        String?
+  phone          String?
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+
+  managedClasses Class[]   @relation("ClassTeacher")
+  subjects       Subject[]
+}
+
+model Class {
+  id             String       @id @default(cuid())
+  name           String       // e.g. "Grade 10-A"
+  section        String       // e.g. "A"
+  gradeLevel     String       // e.g. "Grade 10"
+  roomNumber     String?
+  capacity       Int          @default(40)
+  classTeacherId String?
+  classTeacher   Teacher?     @relation("ClassTeacher", fields: [classTeacherId], references: [id], onDelete: SetNull)
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+
+  students       Student[]
+  subjects       Subject[]
+  attendances    Attendance[]
+}
+
+model Subject {
+  id        String   @id @default(cuid())
+  name      String   // e.g. "Mathematics"
+  code      String   // e.g. "MATH-101"
+  classId   String
+  class     Class    @relation(fields: [classId], references: [id], onDelete: Cascade)
+  teacherId String?
+  teacher   Teacher? @relation(fields: [teacherId], references: [id], onDelete: SetNull)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  results   Result[]
+}
+
+model Student {
+  id              String           @id @default(cuid())
+  userId          String           @unique
+  user            User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  rollNumber      String
+  admissionNumber String           @unique
+  admissionDate   DateTime         @default(now())
+  dateOfBirth     DateTime?
+  gender          String           // "MALE", "FEMALE", "OTHER"
+  bloodGroup      String?
+  address         String?
+  parentName      String?
+  parentPhone     String?
+  parentEmail     String?
+  classId         String
+  class           Class            @relation(fields: [classId], references: [id], onDelete: Cascade)
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
+
+  attendances     Attendance[]
+  results         Result[]
+  fees            Fee[]
+  academicRecords AcademicRecord[]
+}
+
+model Attendance {
+  id         String   @id @default(cuid())
+  studentId  String
+  student    Student  @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  classId    String
+  class      Class    @relation(fields: [classId], references: [id], onDelete: Cascade)
+  date       DateTime
+  status     String   // "PRESENT", "ABSENT", "LATE", "EXCUSED"
+  remarks    String?
+  markedById String?
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+}
+
+model Examination {
+  id           String   @id @default(cuid())
+  name         String   // e.g. "Midterm Examination 2024"
+  examType     String   // "MIDTERM", "FINAL", "UNIT_TEST", "QUIZ"
+  startDate    DateTime
+  endDate      DateTime
+  term         String   // "Term 1", "Term 2", "Final"
+  academicYear String   // "2024-2025"
+  status       String   @default("COMPLETED") // "UPCOMING", "ONGOING", "COMPLETED"
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  results      Result[]
+}
+
+model Result {
+  id            String      @id @default(cuid())
+  examId        String
+  exam          Examination @relation(fields: [examId], references: [id], onDelete: Cascade)
+  studentId     String
+  student       Student     @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  subjectId     String
+  subject       Subject     @relation(fields: [subjectId], references: [id], onDelete: Cascade)
+  marksObtained Float
+  totalMarks    Float       @default(100)
+  percentage    Float
+  grade         String      // "A+", "A", "B", "C", "D", "F"
+  remarks       String?
+  createdAt     DateTime    @default(now())
+  updatedAt     DateTime    @updatedAt
+}
+
+model Fee {
+  id            String    @id @default(cuid())
+  studentId     String
+  student       Student   @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  invoiceNumber String    @unique
+  title         String    // e.g. "Tuition Fee - Quarter 1"
+  amount        Float
+  paidAmount    Float     @default(0)
+  dueDate       DateTime
+  paymentDate   DateTime?
+  paymentMethod String?   // "CASH", "BANK_TRANSFER", "CARD", "ONLINE"
+  status        String    // "PAID", "PENDING", "PARTIAL", "OVERDUE"
+  remarks       String?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+}
+
+model AcademicRecord {
+  id           String   @id @default(cuid())
+  studentId    String
+  student      Student  @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  academicYear String   // "2024-2025"
+  term         String   // "Semester 1", "Semester 2"
+  gpa          Float
+  totalCredits Int      @default(20)
+  rank         Int?
+  status       String   @default("PROMOTED") // "PROMOTED", "DETAINED", "COMPLETED", "ONGOING"
+  remarks      String?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+}
+
+model Announcement {
+  id         String   @id @default(cuid())
+  title      String
+  content    String
+  targetRole String   @default("ALL") // "ALL", "STUDENT", "TEACHER", "ADMIN"
+  priority   String   @default("NORMAL") // "LOW", "NORMAL", "HIGH"
+  authorId   String
+  author     User     @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+}
