@@ -112,7 +112,7 @@ async function prepareTestEnvironment() {
     isCustomTestEnv = true;
 
     const testSchemaContent = originalSchemaContent.replace(
-      /datasource db\s*\{\s*provider\s*=\s*"postgresql"\s*url\s*=\s*env\("DATABASE_URL"\)\s*\}/,
+      /datasource db\s*\{[\s\S]*?\}/,
       'datasource db {\n  provider = "sqlite"\n  url      = "file:./test.db"\n}'
     );
     fs.writeFileSync(schemaPath, testSchemaContent, 'utf8');
@@ -125,10 +125,15 @@ async function prepareTestEnvironment() {
 }
 
 async function cleanupTestEnvironment() {
-  if (isCustomTestEnv && originalSchemaContent) {
+  if (isCustomTestEnv) {
     console.log('🔄 Restoring production PostgreSQL Prisma configuration...');
     const schemaPath = path.join(__dirname, 'prisma', 'schema.prisma');
-    fs.writeFileSync(schemaPath, originalSchemaContent, 'utf8');
+    let content = fs.readFileSync(schemaPath, 'utf8');
+    content = content.replace(
+      /datasource db\s*\{[\s\S]*?\}/,
+      'datasource db {\n  provider = "postgresql"\n  url      = env("DATABASE_URL")\n}'
+    );
+    fs.writeFileSync(schemaPath, content, 'utf8');
 
     try {
       execSync('npx prisma generate', { stdio: 'ignore' });
