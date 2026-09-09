@@ -22,9 +22,19 @@ export async function POST(req: Request) {
 
     const normalizedEmail = email.toLowerCase().trim();
 
-    const existingUser = await prisma.user.findUnique({
-      where: { email: normalizedEmail },
-    });
+    let existingUser = null;
+    try {
+      existingUser = await prisma.user.findUnique({
+        where: { email: normalizedEmail },
+      });
+    } catch (dbErr: any) {
+      console.warn('Registration schema init notice:', dbErr?.message);
+      const { ensureTablesExist } = await import('@/lib/seed');
+      await ensureTablesExist();
+      existingUser = await prisma.user.findUnique({
+        where: { email: normalizedEmail },
+      });
+    }
 
     if (existingUser) {
       return NextResponse.json({ error: 'An account with this email already exists' }, { status: 409 });

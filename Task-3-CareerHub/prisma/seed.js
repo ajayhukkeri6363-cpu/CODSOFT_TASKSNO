@@ -3,8 +3,161 @@ const bcrypt = require('bcryptjs');
 
 const prisma = new PrismaClient();
 
+async function ensureTablesExist() {
+  const ddlStatements = [
+    `CREATE TABLE IF NOT EXISTS "User" (
+      "id" TEXT PRIMARY KEY,
+      "email" TEXT UNIQUE NOT NULL,
+      "passwordHash" TEXT NOT NULL,
+      "role" TEXT NOT NULL DEFAULT 'CANDIDATE',
+      "name" TEXT NOT NULL,
+      "phone" TEXT,
+      "avatar" TEXT,
+      "isActive" BOOLEAN NOT NULL DEFAULT true,
+      "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+      "updatedAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP
+    );`,
+    `CREATE TABLE IF NOT EXISTS "CandidateProfile" (
+      "id" TEXT PRIMARY KEY,
+      "userId" TEXT UNIQUE NOT NULL REFERENCES "User"("id") ON DELETE CASCADE ON UPDATE CASCADE,
+      "headline" TEXT,
+      "bio" TEXT,
+      "location" TEXT,
+      "website" TEXT,
+      "github" TEXT,
+      "linkedin" TEXT,
+      "experienceYears" INTEGER DEFAULT 0,
+      "currentCompany" TEXT,
+      "currentRole" TEXT,
+      "skills" TEXT,
+      "education" TEXT,
+      "experience" TEXT,
+      "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+      "updatedAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP
+    );`,
+    `CREATE TABLE IF NOT EXISTS "Company" (
+      "id" TEXT PRIMARY KEY,
+      "name" TEXT NOT NULL,
+      "slug" TEXT UNIQUE NOT NULL,
+      "logo" TEXT,
+      "website" TEXT,
+      "description" TEXT,
+      "industry" TEXT NOT NULL DEFAULT 'Technology',
+      "location" TEXT NOT NULL DEFAULT 'San Francisco, CA',
+      "companySize" TEXT NOT NULL DEFAULT '50-200',
+      "foundedYear" INTEGER DEFAULT 2018,
+      "verified" BOOLEAN NOT NULL DEFAULT true,
+      "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+      "updatedAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP
+    );`,
+    `CREATE TABLE IF NOT EXISTS "RecruiterProfile" (
+      "id" TEXT PRIMARY KEY,
+      "userId" TEXT UNIQUE NOT NULL REFERENCES "User"("id") ON DELETE CASCADE ON UPDATE CASCADE,
+      "companyId" TEXT NOT NULL REFERENCES "Company"("id") ON DELETE CASCADE ON UPDATE CASCADE,
+      "position" TEXT NOT NULL DEFAULT 'Senior Talent Acquisition Lead',
+      "department" TEXT NOT NULL DEFAULT 'Human Resources',
+      "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+      "updatedAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP
+    );`,
+    `CREATE TABLE IF NOT EXISTS "Job" (
+      "id" TEXT PRIMARY KEY,
+      "recruiterId" TEXT NOT NULL REFERENCES "User"("id") ON DELETE CASCADE ON UPDATE CASCADE,
+      "companyId" TEXT NOT NULL REFERENCES "Company"("id") ON DELETE CASCADE ON UPDATE CASCADE,
+      "title" TEXT NOT NULL,
+      "slug" TEXT UNIQUE NOT NULL,
+      "description" TEXT NOT NULL,
+      "responsibilities" TEXT,
+      "requirements" TEXT,
+      "benefits" TEXT,
+      "jobType" TEXT NOT NULL DEFAULT 'FULL_TIME',
+      "experienceLevel" TEXT NOT NULL DEFAULT 'MID',
+      "remoteStatus" TEXT NOT NULL DEFAULT 'HYBRID',
+      "location" TEXT NOT NULL DEFAULT 'San Francisco, CA',
+      "salaryMin" DOUBLE PRECISION DEFAULT 80000,
+      "salaryMax" DOUBLE PRECISION DEFAULT 130000,
+      "salaryCurrency" TEXT NOT NULL DEFAULT 'USD',
+      "category" TEXT NOT NULL DEFAULT 'Engineering',
+      "status" TEXT NOT NULL DEFAULT 'PUBLISHED',
+      "deadline" TIMESTAMP(3),
+      "isFeatured" BOOLEAN NOT NULL DEFAULT false,
+      "viewsCount" INTEGER NOT NULL DEFAULT 0,
+      "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+      "updatedAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP
+    );`,
+    `CREATE TABLE IF NOT EXISTS "JobSkill" (
+      "id" TEXT PRIMARY KEY,
+      "jobId" TEXT NOT NULL REFERENCES "Job"("id") ON DELETE CASCADE ON UPDATE CASCADE,
+      "skillName" TEXT NOT NULL,
+      "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP
+    );`,
+    `CREATE TABLE IF NOT EXISTS "Resume" (
+      "id" TEXT PRIMARY KEY,
+      "candidateId" TEXT NOT NULL REFERENCES "User"("id") ON DELETE CASCADE ON UPDATE CASCADE,
+      "fileName" TEXT NOT NULL,
+      "fileUrl" TEXT NOT NULL,
+      "storageKey" TEXT,
+      "fileSize" INTEGER NOT NULL DEFAULT 102400,
+      "mimeType" TEXT NOT NULL DEFAULT 'application/pdf',
+      "isDefault" BOOLEAN NOT NULL DEFAULT true,
+      "uploadedAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP
+    );`,
+    `CREATE TABLE IF NOT EXISTS "Application" (
+      "id" TEXT PRIMARY KEY,
+      "jobId" TEXT NOT NULL REFERENCES "Job"("id") ON DELETE CASCADE ON UPDATE CASCADE,
+      "candidateId" TEXT NOT NULL REFERENCES "User"("id") ON DELETE CASCADE ON UPDATE CASCADE,
+      "resumeId" TEXT REFERENCES "Resume"("id") ON DELETE SET NULL ON UPDATE CASCADE,
+      "status" TEXT NOT NULL DEFAULT 'APPLIED',
+      "coverLetter" TEXT,
+      "recruiterNotes" TEXT,
+      "rating" INTEGER DEFAULT 0,
+      "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+      "updatedAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+      CONSTRAINT "Application_jobId_candidateId_key" UNIQUE ("jobId", "candidateId")
+    );`,
+    `CREATE TABLE IF NOT EXISTS "SavedJob" (
+      "id" TEXT PRIMARY KEY,
+      "candidateId" TEXT NOT NULL REFERENCES "User"("id") ON DELETE CASCADE ON UPDATE CASCADE,
+      "jobId" TEXT NOT NULL REFERENCES "Job"("id") ON DELETE CASCADE ON UPDATE CASCADE,
+      "savedAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+      CONSTRAINT "SavedJob_candidateId_jobId_key" UNIQUE ("candidateId", "jobId")
+    );`,
+    `CREATE TABLE IF NOT EXISTS "Interview" (
+      "id" TEXT PRIMARY KEY,
+      "applicationId" TEXT UNIQUE NOT NULL REFERENCES "Application"("id") ON DELETE CASCADE ON UPDATE CASCADE,
+      "scheduledDate" TIMESTAMP(3) NOT NULL,
+      "timeSlot" TEXT NOT NULL,
+      "meetingUrl" TEXT NOT NULL,
+      "meetingType" TEXT NOT NULL DEFAULT 'TECHNICAL',
+      "notes" TEXT,
+      "status" TEXT NOT NULL DEFAULT 'SCHEDULED',
+      "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+      "updatedAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP
+    );`,
+    `CREATE TABLE IF NOT EXISTS "Notification" (
+      "id" TEXT PRIMARY KEY,
+      "userId" TEXT NOT NULL REFERENCES "User"("id") ON DELETE CASCADE ON UPDATE CASCADE,
+      "title" TEXT NOT NULL,
+      "message" TEXT NOT NULL,
+      "type" TEXT NOT NULL DEFAULT 'INFO',
+      "read" BOOLEAN NOT NULL DEFAULT false,
+      "link" TEXT,
+      "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP
+    );`
+  ];
+
+  for (const ddl of ddlStatements) {
+    try {
+      await prisma.$executeRawUnsafe(ddl);
+    } catch {
+      // Ignore if exists
+    }
+  }
+}
+
 async function main() {
   console.log('🌱 Seeding CareerHub Recruitment Platform Database...');
+
+  await ensureTablesExist();
 
   // Clean existing tables in reverse relation order
   try {

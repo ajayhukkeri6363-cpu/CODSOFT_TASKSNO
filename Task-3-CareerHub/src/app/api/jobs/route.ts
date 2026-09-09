@@ -87,14 +87,21 @@ export async function GET(req: Request) {
     const limit = Math.max(1, Math.min(50, parseInt(searchParams.get('limit') || '12')));
     const skip = (page - 1) * limit;
 
-    // Auto-seed initial catalog if database is fresh and empty
-    const globalJobCount = await prisma.job.count();
-    if (globalJobCount === 0) {
-      try {
+    // Ensure tables exist and auto-seed initial catalog if empty
+    try {
+      const globalJobCount = await prisma.job.count();
+      if (globalJobCount === 0) {
         const { seedCareerHubData } = await import('@/lib/seed');
         await seedCareerHubData();
-      } catch (seedErr) {
-        console.warn('Auto-seed fallback notice:', seedErr);
+      }
+    } catch (countErr: any) {
+      console.warn('Initial schema setup notice:', countErr?.message);
+      try {
+        const { ensureTablesExist, seedCareerHubData } = await import('@/lib/seed');
+        await ensureTablesExist();
+        await seedCareerHubData();
+      } catch (seedInitErr) {
+        console.error('Database bootstrap error:', seedInitErr);
       }
     }
 

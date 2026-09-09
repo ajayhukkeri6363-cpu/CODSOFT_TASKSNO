@@ -14,12 +14,30 @@ export async function POST(req: Request) {
 
     const normalizedEmail = email.toLowerCase().trim();
 
-    const user = await prisma.user.findUnique({
-      where: { email: normalizedEmail },
-      include: {
-        recruiterProfile: true,
-      },
-    });
+    let user = null;
+    try {
+      user = await prisma.user.findUnique({
+        where: { email: normalizedEmail },
+        include: {
+          recruiterProfile: true,
+        },
+      });
+    } catch (dbErr: any) {
+      console.warn('Login database initialization notice:', dbErr?.message);
+      try {
+        const { ensureTablesExist, seedCareerHubData } = await import('@/lib/seed');
+        await ensureTablesExist();
+        await seedCareerHubData();
+        user = await prisma.user.findUnique({
+          where: { email: normalizedEmail },
+          include: {
+            recruiterProfile: true,
+          },
+        });
+      } catch (retryErr) {
+        console.error('Login schema retry failed:', retryErr);
+      }
+    }
 
     if (!user) {
       return NextResponse.json({ error: 'Invalid email or password' }, { status: 401 });
