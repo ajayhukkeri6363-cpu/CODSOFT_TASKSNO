@@ -2,6 +2,75 @@ import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { getCurrentUser } from '@/lib/auth';
 
+const TYPO_MAP: Record<string, string[]> = {
+  engineerng: ['engineer', 'engineering'],
+  enginer: ['engineer', 'engineering'],
+  engg: ['engineer', 'engineering'],
+  engin: ['engineer', 'engineering'],
+  develepor: ['developer', 'development'],
+  devloper: ['developer', 'development'],
+  develpr: ['developer', 'development'],
+  dev: ['developer', 'development'],
+  sofware: ['software'],
+  softwre: ['software'],
+  desgn: ['design', 'designer'],
+  dsign: ['design', 'designer'],
+  mchine: ['machine'],
+  learnig: ['learning'],
+  pythn: ['python'],
+  javascrpt: ['javascript'],
+  typescrpt: ['typescript'],
+  recat: ['react'],
+  fronted: ['frontend'],
+  frotend: ['frontend'],
+  backendd: ['backend'],
+  bakend: ['backend'],
+  fulstack: ['full stack', 'fullstack'],
+};
+
+function getSearchVariations(rawSearch: string): string[] {
+  const clean = rawSearch.trim();
+  const lower = clean.toLowerCase();
+  const terms = new Set<string>();
+
+  terms.add(clean);
+  terms.add(lower);
+  terms.add(clean.charAt(0).toUpperCase() + clean.slice(1));
+  terms.add(clean.toUpperCase());
+
+  if (TYPO_MAP[lower]) {
+    for (const corrected of TYPO_MAP[lower]) {
+      terms.add(corrected);
+      terms.add(corrected.charAt(0).toUpperCase() + corrected.slice(1));
+    }
+  }
+
+  if (lower.startsWith('engin')) {
+    terms.add('engineer');
+    terms.add('Engineer');
+    terms.add('Engineering');
+  }
+  if (lower.startsWith('devel')) {
+    terms.add('developer');
+    terms.add('Developer');
+  }
+  if (lower.startsWith('desig')) {
+    terms.add('design');
+    terms.add('Designer');
+    terms.add('Design');
+  }
+  if (lower.startsWith('softw')) {
+    terms.add('software');
+    terms.add('Software');
+  }
+  if (lower.startsWith('react')) {
+    terms.add('React');
+    terms.add('react');
+  }
+
+  return Array.from(terms);
+}
+
 export async function GET(req: Request) {
   try {
     const { searchParams } = new URL(req.url);
@@ -40,11 +109,20 @@ export async function GET(req: Request) {
     }
 
     if (search) {
-      where.OR = [
-        { title: { contains: search } },
-        { description: { contains: search } },
-        { company: { name: { contains: search } } },
-      ];
+      const searchTerms = getSearchVariations(search);
+      const orConditions: any[] = [];
+
+      for (const term of searchTerms) {
+        orConditions.push(
+          { title: { contains: term } },
+          { description: { contains: term } },
+          { category: { contains: term } },
+          { company: { name: { contains: term } } },
+          { skills: { some: { skillName: { contains: term } } } }
+        );
+      }
+
+      where.OR = orConditions;
     }
 
     if (location) {

@@ -100,8 +100,14 @@ function JobsListContent() {
         </div>
 
         {/* Global Search Bar Card */}
-        <div className="bg-white p-3 rounded-2xl border border-slate-200 shadow-sm mb-8">
-          <div className="grid grid-cols-1 md:grid-cols-12 gap-3">
+        <div className="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm mb-8 space-y-3">
+          <form
+            onSubmit={(e) => {
+              e.preventDefault();
+              fetchJobs();
+            }}
+            className="grid grid-cols-1 md:grid-cols-12 gap-3"
+          >
             <div className="md:col-span-5 relative flex items-center">
               <Search className="w-5 h-5 text-slate-400 absolute left-3.5" />
               <input
@@ -132,9 +138,9 @@ function JobsListContent() {
 
             <div className="md:col-span-3 flex items-center space-x-2">
               <Button
+                type="submit"
                 variant="secondary"
                 className="w-full"
-                onClick={() => fetchJobs()}
               >
                 Search
               </Button>
@@ -146,6 +152,24 @@ function JobsListContent() {
                 <SlidersHorizontal className="w-5 h-5" />
               </button>
             </div>
+          </form>
+
+          {/* Quick Popular Keyword Chips */}
+          <div className="flex flex-wrap items-center gap-1.5 pt-1 text-xs text-slate-500">
+            <span className="font-semibold text-slate-400 mr-1">Popular:</span>
+            {['Engineering', 'Full Stack', 'Frontend', 'React', 'Python', 'DevOps', 'Design', 'Remote'].map((keyword) => (
+              <button
+                key={keyword}
+                type="button"
+                onClick={() => {
+                  setSearch(keyword);
+                  setPage(1);
+                }}
+                className="px-2.5 py-1 rounded-full bg-slate-100 hover:bg-indigo-50 hover:text-indigo-600 text-slate-600 transition-colors font-medium text-xs"
+              >
+                {keyword}
+              </button>
+            ))}
           </div>
         </div>
 
@@ -319,19 +343,44 @@ function JobsListContent() {
                 ))}
               </div>
             ) : (
-              <div className="bg-white rounded-2xl border border-slate-200 p-12 text-center space-y-4">
+              <div className="bg-white rounded-2xl border border-slate-200 p-12 text-center space-y-5">
                 <div className="w-16 h-16 rounded-full bg-slate-100 text-slate-400 flex items-center justify-center mx-auto">
                   <Briefcase className="w-8 h-8" />
                 </div>
                 <div>
                   <h3 className="text-lg font-bold text-slate-900">No matching jobs found</h3>
                   <p className="text-sm text-slate-500 mt-1 max-w-sm mx-auto">
-                    Try relaxing your search terms, removing filters, or searching for other engineering roles.
+                    Try checking your spelling, relaxing search filters, or exploring popular tech roles below.
                   </p>
                 </div>
-                <Button variant="outline" onClick={handleResetFilters}>
-                  Clear All Filters
-                </Button>
+
+                <div className="flex flex-wrap justify-center items-center gap-2 pt-1">
+                  <span className="text-xs font-bold text-slate-400">Try searching:</span>
+                  {['Engineering', 'Developer', 'Full Stack', 'Remote'].map((sug) => (
+                    <button
+                      key={sug}
+                      type="button"
+                      onClick={() => {
+                        setSearch(sug);
+                        setCategory('ALL');
+                        setJobType('ALL');
+                        setRemoteStatus('ALL');
+                        setExperienceLevel('ALL');
+                        setMinSalary('0');
+                        setPage(1);
+                      }}
+                      className="px-3 py-1 rounded-lg bg-indigo-50 hover:bg-indigo-100 text-indigo-600 text-xs font-semibold transition-colors"
+                    >
+                      {sug}
+                    </button>
+                  ))}
+                </div>
+
+                <div className="pt-2">
+                  <Button variant="outline" onClick={handleResetFilters}>
+                    Clear All Filters & Show All Jobs
+                  </Button>
+                </div>
               </div>
             )}
 
