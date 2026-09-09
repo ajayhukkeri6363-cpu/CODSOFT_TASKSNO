@@ -1,0 +1,192 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id           String   @id @default(cuid())
+  email        String   @unique
+  passwordHash String
+  role         String   @default("CANDIDATE") // "CANDIDATE", "RECRUITER", "ADMIN"
+  name         String
+  phone        String?
+  avatar       String?
+  isActive     Boolean  @default(true)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  candidateProfile CandidateProfile?
+  recruiterProfile RecruiterProfile?
+  jobs             Job[]             @relation("RecruiterJobs")
+  applications     Application[]     @relation("CandidateApplications")
+  resumes          Resume[]          @relation("CandidateResumes")
+  savedJobs        SavedJob[]        @relation("CandidateSavedJobs")
+  notifications    Notification[]
+}
+
+model CandidateProfile {
+  id              String   @id @default(cuid())
+  userId          String   @unique
+  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  headline        String?
+  bio             String?
+  location        String?
+  website         String?
+  github          String?
+  linkedin        String?
+  experienceYears Int?     @default(0)
+  currentCompany  String?
+  currentRole     String?
+  skills          String?  // JSON string array e.g. '["React", "TypeScript", "Node.js"]'
+  education       String?  // JSON string array e.g. '[{"degree":"B.S. CS","school":"Stanford","year":"2022"}]'
+  experience      String?  // JSON string array e.g. '[{"title":"Frontend Dev","company":"Acme","years":"2"}]'
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+}
+
+model Company {
+  id          String   @id @default(cuid())
+  name        String
+  slug        String   @unique
+  logo        String?
+  website     String?
+  description String?
+  industry    String   @default("Technology")
+  location    String   @default("San Francisco, CA")
+  companySize String   @default("50-200") // e.g. "1-10", "11-50", "51-200", "201-500", "500+"
+  foundedYear Int?     @default(2018)
+  verified    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  recruiters  RecruiterProfile[]
+  jobs        Job[]
+}
+
+model RecruiterProfile {
+  id         String   @id @default(cuid())
+  userId     String   @unique
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  companyId  String
+  company    Company  @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  position   String   @default("Senior Talent Acquisition Lead")
+  department String   @default("Human Resources")
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+}
+
+model Job {
+  id               String     @id @default(cuid())
+  recruiterId      String
+  recruiter        User       @relation("RecruiterJobs", fields: [recruiterId], references: [id], onDelete: Cascade)
+  companyId        String
+  company          Company    @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  title            String
+  slug             String     @unique
+  description      String
+  responsibilities String?    // JSON or Markdown
+  requirements     String?    // JSON or Markdown
+  benefits         String?    // JSON or Markdown
+  jobType          String     @default("FULL_TIME") // "FULL_TIME", "PART_TIME", "CONTRACT", "INTERNSHIP", "FREELANCE"
+  experienceLevel  String     @default("MID") // "ENTRY", "MID", "SENIOR", "LEAD", "EXECUTIVE"
+  remoteStatus     String     @default("HYBRID") // "ON_SITE", "HYBRID", "REMOTE"
+  location         String     @default("San Francisco, CA")
+  salaryMin        Float?     @default(80000)
+  salaryMax        Float?     @default(130000)
+  salaryCurrency   String     @default("USD")
+  category         String     @default("Engineering") // "Engineering", "Design", "Product", "Marketing", "Data Science", "DevOps", "Sales"
+  status           String     @default("PUBLISHED") // "DRAFT", "PUBLISHED", "CLOSED"
+  deadline         DateTime?
+  isFeatured       Boolean    @default(false)
+  viewsCount       Int        @default(0)
+  createdAt        DateTime   @default(now())
+  updatedAt        DateTime   @updatedAt
+
+  skills           JobSkill[]
+  applications     Application[]
+  savedJobs        SavedJob[]
+}
+
+model JobSkill {
+  id        String   @id @default(cuid())
+  jobId     String
+  job       Job      @relation(fields: [jobId], references: [id], onDelete: Cascade)
+  skillName String
+  createdAt DateTime @default(now())
+}
+
+model Resume {
+  id          String        @id @default(cuid())
+  candidateId String
+  candidate   User          @relation("CandidateResumes", fields: [candidateId], references: [id], onDelete: Cascade)
+  fileName    String
+  fileUrl     String
+  storageKey  String?
+  fileSize    Int           @default(102400) // bytes
+  mimeType    String        @default("application/pdf")
+  isDefault   Boolean       @default(true)
+  uploadedAt  DateTime      @default(now())
+
+  applications Application[]
+}
+
+model Application {
+  id             String     @id @default(cuid())
+  jobId          String
+  job            Job        @relation(fields: [jobId], references: [id], onDelete: Cascade)
+  candidateId    String
+  candidate      User       @relation("CandidateApplications", fields: [candidateId], references: [id], onDelete: Cascade)
+  resumeId       String?
+  resume         Resume?    @relation(fields: [resumeId], references: [id], onDelete: SetNull)
+  status         String     @default("APPLIED") // "APPLIED", "UNDER_REVIEW", "SHORTLISTED", "INTERVIEW", "SELECTED", "REJECTED", "WITHDRAWN"
+  coverLetter    String?
+  recruiterNotes String?
+  rating         Int?       @default(0) // 1 to 5 stars
+  createdAt      DateTime   @default(now())
+  updatedAt      DateTime   @updatedAt
+
+  interview      Interview?
+
+  @@unique([jobId, candidateId])
+}
+
+model SavedJob {
+  id          String   @id @default(cuid())
+  candidateId String
+  candidate   User     @relation("CandidateSavedJobs", fields: [candidateId], references: [id], onDelete: Cascade)
+  jobId       String
+  job         Job      @relation(fields: [jobId], references: [id], onDelete: Cascade)
+  savedAt     DateTime @default(now())
+
+  @@unique([candidateId, jobId])
+}
+
+model Interview {
+  id            String      @id @default(cuid())
+  applicationId String      @unique
+  application   Application @relation(fields: [applicationId], references: [id], onDelete: Cascade)
+  scheduledDate DateTime
+  timeSlot      String      // e.g. "10:30 AM - 11:15 AM EST"
+  meetingUrl    String      // e.g. "https://meet.google.com/abc-defg-hij"
+  meetingType   String      @default("TECHNICAL") // "SCREENING", "TECHNICAL", "BEHAVIORAL", "FINAL_ROUND"
+  notes         String?
+  status        String      @default("SCHEDULED") // "SCHEDULED", "COMPLETED", "CANCELLED"
+  createdAt     DateTime    @default(now())
+  updatedAt     DateTime    @updatedAt
+}
+
+model Notification {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  title     String
+  message   String
+  type      String   @default("INFO") // "APPLICATION_UPDATE", "INTERVIEW_SCHEDULED", "JOB_ALERT", "INFO"
+  read      Boolean  @default(false)
+  link      String?
+  createdAt DateTime @default(now())
+}

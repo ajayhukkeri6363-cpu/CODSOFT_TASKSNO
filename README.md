@@ -10,7 +10,7 @@ Welcome to my **CodSoft Full Stack Web Development Internship** repository! This
 | :--- | :--- | :--- | :--- | :---: | :---: |
 | **Task 1** | **EduManage** | Comprehensive Student & Academic Administration Management System | Next.js 14, TypeScript, Tailwind CSS, Prisma, PostgreSQL | ✅ **Completed** | [📂 `./Task-1-EduManage`](./Task-1-EduManage) |
 | **Task 2** | **DineDesk** | Modern Gourmet Restaurant Ordering, Table Reservation & Kitchen KDS Platform | Next.js 14, TypeScript, Tailwind CSS, Prisma, Neon PostgreSQL | ✅ **Completed** | [📂 `./Task-2-DineDesk`](./Task-2-DineDesk) |
-| **Task 3** | *Upcoming Project* | *Will be assigned as per CodSoft Internship schedule* | *TBD* | ⏳ *Pending* | `./Task-3-[ProjectName]` |
+| **Task 3** | **CareerHub** | Modern Recruitment Platform, ATS Kanban Pipeline & Job Portal | Next.js 14, TypeScript, Tailwind CSS, Prisma, PostgreSQL, Cloud Storage | ✅ **Completed** | [📂 `./Task-3-CareerHub`](./Task-3-CareerHub) |
 
 ---
 
@@ -44,6 +44,20 @@ CODSOFT_TASKSNO/
 │   ├── .env.example               # Environment variables template
 │   ├── package.json               # Task 2 dependencies & scripts
 │   └── README.md                  # Detailed Task 2 documentation
+│
+├── Task-3-CareerHub/              # Task 3: Job Portal & Recruitment Platform
+│   ├── src/
+│   │   ├── app/                   # Marketplace, Candidate & Recruiter portals, Admin ATS
+│   │   ├── components/            # Kanban ATS board, modals, job cards, navigation
+│   │   ├── context/               # AuthContext, ToastContext
+│   │   └── lib/                   # Auth, Prisma client, Cloud Storage abstraction
+│   ├── prisma/
+│   │   ├── schema.prisma          # PostgreSQL recruitment relations schema
+│   │   └── seed.js                # Realistic tech positions & candidates seed script
+│   ├── test-suite.js              # Comprehensive automated verification suite
+│   ├── .env.example               # Environment variables template
+│   ├── package.json               # Task 3 dependencies & scripts
+│   └── README.md                  # Detailed Task 3 documentation
 │
 ├── .gitignore                     # Monorepo-wide Git ignore rules
 └── README.md                      # Master repository documentation
@@ -83,13 +97,25 @@ npm run dev
 ```
 *Access DineDesk at `http://localhost:3000`.*
 
+### 4. Running Task 3: CareerHub (Job Portal & Recruitment Platform)
+```bash
+cd Task-3-CareerHub
+npm install
+cp .env.example .env
+# Configure your DATABASE_URL in .env
+npx prisma db push
+node prisma/seed.js
+npm run dev
+```
+*Access CareerHub at `http://localhost:3000`.*
+
 ---
 
 ## 🌐 Vercel Production Deployment
 
 To deploy any project from this repository on **Vercel**:
 1. Import the repository into your Vercel dashboard.
-2. In **Project Settings ➔ General ➔ Root Directory**, select the project folder (e.g. `Task-2-DineDesk`).
+2. In **Project Settings ➔ General ➔ Root Directory**, select the project folder (e.g. `Task-3-CareerHub`).
 3. Set the environment variables (`DATABASE_URL`, `JWT_SECRET`) in Vercel.
 4. Deploy!
 
