@@ -125,15 +125,17 @@ async function prepareTestEnvironment() {
 }
 
 async function cleanupTestEnvironment() {
-  if (isCustomTestEnv) {
-    console.log('🔄 Restoring production PostgreSQL Prisma configuration...');
+  console.log('🔄 Restoring production PostgreSQL Prisma configuration...');
+  try {
     const schemaPath = path.join(__dirname, 'prisma', 'schema.prisma');
-    let content = fs.readFileSync(schemaPath, 'utf8');
-    content = content.replace(
-      /datasource db\s*\{[\s\S]*?\}/,
-      'datasource db {\n  provider = "postgresql"\n  url      = env("DATABASE_URL")\n}'
-    );
-    fs.writeFileSync(schemaPath, content, 'utf8');
+    if (fs.existsSync(schemaPath)) {
+      let content = fs.readFileSync(schemaPath, 'utf8');
+      content = content.replace(
+        /datasource db\s*\{[\s\S]*?\}/,
+        'datasource db {\n  provider = "postgresql"\n  url      = env("DATABASE_URL")\n}'
+      );
+      fs.writeFileSync(schemaPath, content, 'utf8');
+    }
 
     try {
       execSync('npx prisma generate', { stdio: 'ignore' });
@@ -143,6 +145,8 @@ async function cleanupTestEnvironment() {
     const testDbJournal = path.join(__dirname, 'prisma', 'test.db-journal');
     if (fs.existsSync(testDb)) try { fs.unlinkSync(testDb); } catch {}
     if (fs.existsSync(testDbJournal)) try { fs.unlinkSync(testDbJournal); } catch {}
+  } catch (e) {
+    console.error('Error during cleanup:', e);
   }
 }
 
