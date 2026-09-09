@@ -1,5 +1,8 @@
 const http = require('http');
-const { spawn } = require('child_process');
+const net = require('net');
+const fs = require('fs');
+const path = require('path');
+const { spawn, execSync } = require('child_process');
 
 const PORT = 3002;
 const BASE_URL = `http://localhost:${PORT}`;
@@ -8,6 +11,28 @@ let serverProcess;
 let testCount = 0;
 let passedCount = 0;
 let failedCount = 0;
+let isCustomTestEnv = false;
+let originalSchemaContent = null;
+
+function isPortOpen(host, port, timeout = 1000) {
+  return new Promise((resolve) => {
+    const socket = new net.Socket();
+    socket.setTimeout(timeout);
+    socket.on('connect', () => {
+      socket.destroy();
+      resolve(true);
+    });
+    socket.on('timeout', () => {
+      socket.destroy();
+      resolve(false);
+    });
+    socket.on('error', () => {
+      socket.destroy();
+      resolve(false);
+    });
+    socket.connect(port, host);
+  });
+}
 
 function assert(condition, message) {
   testCount++;
@@ -64,6 +89,58 @@ function sleep(ms) {
   return new Promise((r) => setTimeout(r, ms));
 }
 
+async function prepareTestEnvironment() {
+  const schemaPath = path.join(__dirname, 'prisma', 'schema.prisma');
+  originalSchemaContent = fs.readFileSync(schemaPath, 'utf8');
+
+  const dbUrl = process.env.DATABASE_URL || 'postgresql://postgres:password@localhost:5432/careerhub';
+  let isPgReachable = false;
+
+  if (dbUrl.startsWith('postgresql://') || dbUrl.startsWith('postgres://')) {
+    try {
+      const parsed = new URL(dbUrl);
+      const host = parsed.hostname || 'localhost';
+      const port = parseInt(parsed.port || '5432');
+      isPgReachable = await isPortOpen(host, port, 1000);
+    } catch {
+      isPgReachable = false;
+    }
+  }
+
+  if (!isPgReachable) {
+    console.log('ℹ️ Local PostgreSQL server offline — preparing isolated test sandbox...');
+    isCustomTestEnv = true;
+
+    const testSchemaContent = originalSchemaContent.replace(
+      /datasource db\s*\{\s*provider\s*=\s*"postgresql"\s*url\s*=\s*env\("DATABASE_URL"\)\s*\}/,
+      'datasource db {\n  provider = "sqlite"\n  url      = "file:./test.db"\n}'
+    );
+    fs.writeFileSync(schemaPath, testSchemaContent, 'utf8');
+
+    execSync('npx prisma db push --schema=prisma/schema.prisma --skip-generate', { stdio: 'ignore' });
+    execSync('npx prisma generate', { stdio: 'ignore' });
+    execSync('node prisma/seed.js', { stdio: 'ignore' });
+    execSync('npx next build', { stdio: 'ignore' });
+  }
+}
+
+async function cleanupTestEnvironment() {
+  if (isCustomTestEnv && originalSchemaContent) {
+    console.log('🔄 Restoring production PostgreSQL Prisma configuration...');
+    const schemaPath = path.join(__dirname, 'prisma', 'schema.prisma');
+    fs.writeFileSync(schemaPath, originalSchemaContent, 'utf8');
+
+    try {
+      execSync('npx prisma generate', { stdio: 'ignore' });
+    } catch {}
+
+    const testDb = path.join(__dirname, 'prisma', 'test.db');
+    const testDbJournal = path.join(__dirname, 'prisma', 'test.db-journal');
+    if (fs.existsSync(testDb)) try { fs.unlinkSync(testDb); } catch {}
+    if (fs.existsSync(testDbJournal)) try { fs.unlinkSync(testDbJournal); } catch {}
+  }
+}
+
 async function startServer() {
   console.log(`\n⚙️ Starting CareerHub Next.js test server on port ${PORT}...`);
   serverProcess = spawn('npx', ['next', 'start', '-p', PORT.toString()], {
@@ -101,6 +178,7 @@ async function stopServer() {
 
 async function runTests() {
   try {
+    await prepareTestEnvironment();
     await startServer();
 
     console.log('===============================================================');
@@ -451,6 +529,7 @@ async function runTests() {
     process.exit(1);
   } finally {
     await stopServer();
+    await cleanupTestEnvironment();
   }
 }
 

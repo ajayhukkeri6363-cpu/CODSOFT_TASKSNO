@@ -160,16 +160,45 @@ This verifies:
 
 ---
 
-## 🌐 Vercel Production Deployment
+## 🌐 Vercel Deployment
 
-To deploy **Task 3 (CareerHub)** as a separate project on Vercel:
+Deploy CareerHub as an independent, isolated production application on Vercel:
 
-1. Import the `CODSOFT_TASKSNO` repository in your Vercel dashboard.
-2. In **Project Settings ➔ General ➔ Root Directory**, set:
-   ```text
-   Task-3-CareerHub
-   ```
-3. Add the production environment variables:
-   - `DATABASE_URL` (e.g. Neon PostgreSQL connection string)
-   - `JWT_SECRET`
-4. Deploy!
+### 1. Project Configuration
+- **Repository**: Connect your GitHub repository (`CODSOFT_TASKSNO`).
+- **Framework Preset**: `Next.js`
+- **Root Directory**: `Task-3-CareerHub` (Essential: do not build from repo root).
+- **Build Command**: `prisma generate && next build` (or `npm run build`)
+- **Output Directory**: `.next` (default)
+- **Install Command**: `npm install` (default)
+
+### 2. Environment Variables in Vercel Dashboard
+Configure the following in **Vercel Project Settings ➔ Environment Variables**:
+
+| Variable Name | Status | Description | Example / Notes |
+| :--- | :--- | :--- | :--- |
+| `DATABASE_URL` | **REQUIRED** | Dedicated PostgreSQL connection URL with SSL enabled | `postgresql://USER:PASSWORD@ep-xyz.us-east-2.aws.neon.tech/careerhub?sslmode=require` |
+| `JWT_SECRET` | **REQUIRED** | Secure random secret for session signing (Min 32 chars) | Generate with `openssl rand -base64 32` |
+| `NEXT_PUBLIC_APP_URL` | **OPTIONAL** | Production domain URL for canonical links | `https://careerhub-portal.vercel.app` |
+| `CLOUD_STORAGE_PROVIDER`| **OPTIONAL** | Resume storage provider (`local` / `s3`) | `local` (uses built-in serverless fallback) |
+
+> [!IMPORTANT]
+> **Database Isolation**: CareerHub must use its own dedicated PostgreSQL database or separate schema. Never point `DATABASE_URL` to Task 1 or Task 2 databases.
+
+### 3. Production Database Initialization & Schema Push
+Before or after the initial build, push the Prisma relational schema to your production PostgreSQL database:
+```bash
+# From your local machine terminal inside Task-3-CareerHub:
+DATABASE_URL="your-production-postgresql-url" npx prisma db push
+```
+
+### 4. Production Seed Procedure (Optional Demo Content)
+To populate your production database with realistic companies, recruiters, candidates, jobs, and interviews:
+```bash
+# Run manually from your terminal:
+DATABASE_URL="your-production-postgresql-url" node prisma/seed.js
+```
+> [!NOTE]
+> Seeding is **never automatic** upon web request. All database seeding commands use safe `upsert` operations to prevent duplicate errors or data loss.
+
+---
