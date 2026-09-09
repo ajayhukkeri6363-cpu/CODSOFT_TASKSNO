@@ -18,13 +18,24 @@ export async function GET(req: Request) {
     const limit = Math.max(1, Math.min(50, parseInt(searchParams.get('limit') || '12')));
     const skip = (page - 1) * limit;
 
+    // Auto-seed initial catalog if database is fresh and empty
+    const globalJobCount = await prisma.job.count();
+    if (globalJobCount === 0) {
+      try {
+        const { seedCareerHubData } = await import('@/lib/seed');
+        await seedCareerHubData();
+      } catch (seedErr) {
+        console.warn('Auto-seed fallback notice:', seedErr);
+      }
+    }
+
     // Filter by status (default to PUBLISHED)
     const statusParam = searchParams.get('status');
     const status = statusParam || 'PUBLISHED';
 
     const where: any = {};
 
-    if (status !== 'ALL') {
+    if (status && status.toUpperCase() !== 'ALL') {
       where.status = status;
     }
 
@@ -40,23 +51,23 @@ export async function GET(req: Request) {
       where.location = { contains: location };
     }
 
-    if (category && category !== 'All' && category !== 'all') {
+    if (category && category.toUpperCase() !== 'ALL') {
       where.category = { equals: category };
     }
 
-    if (jobType && jobType !== 'ALL') {
+    if (jobType && jobType.toUpperCase() !== 'ALL') {
       where.jobType = jobType;
     }
 
-    if (experienceLevel && experienceLevel !== 'ALL') {
+    if (experienceLevel && experienceLevel.toUpperCase() !== 'ALL') {
       where.experienceLevel = experienceLevel;
     }
 
-    if (remoteStatus && remoteStatus !== 'ALL') {
+    if (remoteStatus && remoteStatus.toUpperCase() !== 'ALL') {
       where.remoteStatus = remoteStatus;
     }
 
-    if (minSalary) {
+    if (minSalary && minSalary > 0) {
       where.salaryMax = { gte: minSalary };
     }
 
